@@ -1,0 +1,41 @@
+{
+    "name": "icmbio/phpxform",
+    "description": "validade upload spreadsheet",
+    "type": "library",
+    "autoload": {
+        "files": [
+          "src/helpers/index.php"
+        ],
+        "psr-4": {
+            "Icmbio\\Phpxform\\": "src/"
+        }
+    },
+    "autoload-dev": {
+      "psr-4": {
+        "Tests\\Phpxform\\": "tests/"
+      }
+    },
+    "authors": [
+        {
+            "name": "João Pedro Garcia",
+            "email": "jotapegue09@gmail.com"
+        },
+        {
+            "name": "Marcio Bastos Neves",
+            "email": "marciobastosn@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10"
+    },
+    "require": {
+        "phpoffice/phpspreadsheet": "dev-master",
+        "rap2hpoutre/fast-excel": "dev-master"
+    }
+}
