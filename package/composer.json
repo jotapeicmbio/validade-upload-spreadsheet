@@ -1,18 +1,18 @@
 {
-    "name": "icmbio/phpxform",
-    "description": "validade upload spreadsheet",
+    "name": "icmbio/validate-upload-registers-from-spreadsheet",
+    "description": "validate upload registers from spreadsheet",
     "type": "library",
     "autoload": {
         "files": [
           "src/helpers/index.php"
         ],
         "psr-4": {
-            "Icmbio\\Phpxform\\": "src/"
+            "Icmbio\\ValidateRegister\\": "src/"
         }
     },
     "autoload-dev": {
       "psr-4": {
-        "Tests\\Phpxform\\": "tests/"
+        "Tests\\ValidateRegister\\": "tests/"
       }
     },
     "authors": [
