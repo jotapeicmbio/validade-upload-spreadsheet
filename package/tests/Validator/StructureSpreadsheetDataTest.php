@@ -21,10 +21,10 @@ class StructureSpreadsheetDataTest extends TestCase
             [null, null, null, null, 'Info 54'],
             [null, null, null, null, 'Info 55'],
             ['OtherInfo 1', 'OtherInfo 2', 'OtherInfo 3', 'OtherInfo 4', 'OtherInfo 51'],
-            [null, null. null, null, 'OtherInfo 52'],
-            [null, null. null, null, 'OtherInfo 53'],
-            [null, null. null, null, 'OtherInfo 54'],
-            [null, null. null, null, 'OtherInfo 55'],
+            [null, "", null, null, 'OtherInfo 52'],
+            [null, '', null, null, 'OtherInfo 53'],
+            [null, " ", null, null, 'OtherInfo 54'],
+            [null, ' ', null, null, 'OtherInfo 55'],
         ];
         
         $expected = [
