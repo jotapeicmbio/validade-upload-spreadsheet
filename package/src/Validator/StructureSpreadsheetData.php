@@ -2,9 +2,6 @@
 
 namespace Icmbio\ValidateRegister\Validator;
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use function Jotapegue\Phpxform\helpers\app_base;
-
 class StructureSpreadsheetData 
 {
     protected array $dataSet = [];
@@ -18,57 +15,51 @@ class StructureSpreadsheetData
         $this->setLabels();
     }
 
-    public function setHeaders() : void
+    private function setHeaders() : void
     {
         $this->headers = $this->dataSet[0];
         unset($this->dataSet[0]);
     }
 
-    public function setLabels() : void
+    private function setLabels() : void
     {
         $this->labels = $this->dataSet[1];
         unset($this->dataSet[1]);
     }
 
-    public function reorderDataSet() : void
-    {
-        array_unshift($this->dataSet, $this->labels);
-        array_unshift($this->dataSet, $this->headers);
-    }
-
     public function output() : array
     {
-        $currentValidLine = [];   
+        return [
+            $this->headers,
+            $this->labels,
+            ...$this->structureDataSet()
+        ];
+    }
+
+    protected function structureDataSet() : array
+    {
+        $model = [];
+        
         foreach ($this->dataSet as $key => $row) {
-            if ($this->validLine($row)) {
-                $currentValidLine = $row;
+            if (!in_array(null, $row)) {
+                $model = $row;
             } else {
-                $this->dataSet[$key] = $this->changeValidLine($row, $currentValidLine);
+                $this->dataSet[$key] = $this->fillRowWithModel($row, $model);
             }
         }
-        $this->reorderDataSet();
+        
         return $this->dataSet;
-
     }
 
-    public function validLine(array $row) : bool
+    protected function fillRowWithModel($row, $rowModel) : array
     {
-        $numberOfValidRows = 0;
-        foreach ($row as $key => $cell) {
-            if(!is_null($cell)){
-                $numberOfValidRows ++;
-            }
-        }
-        return $numberOfValidRows >= (count($row) -1);
+        return array_map(function ($cell, $model) {
+            return $this->validateCell($cell) ? $cell = $model : $cell;
+        }, $row, $rowModel);
     }
 
-    public function changeValidLine($row, $currentValidLine) : array
+    protected function validateCell (mixed $cell) : bool
     {
-        foreach ($row as $key => $value) {
-            if(is_null($value)){
-                $row[$key] = $currentValidLine[$key];
-            }
-        }
-        return $row;
+        return is_null($cell) || $cell == " " || $cell == "";
     }
 }
