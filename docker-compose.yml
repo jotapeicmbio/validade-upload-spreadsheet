@@ -1,12 +1,13 @@
 services:
   app:
-    container_name: validade-upload-spreadsheet
     build:
       context: ./docker/development/php
       dockerfile: Dockerfile
       args:
         - user=${HOST_USER}
         - uid=${HOST_UID}
+    container_name: dev_validade_upload_spreadsheet_app
+    image: dev_validade_upload_spreadsheet_app
     working_dir: /var/www/html
     ports:
       - "8000-8004:8000"
