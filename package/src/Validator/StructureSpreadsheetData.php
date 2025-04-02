@@ -8,7 +8,7 @@ class StructureSpreadsheetData
     protected array $headers = [];
     protected array $labels = [];
 
-    public function __construct($worksheet)
+    public function __construct(array $worksheet)
     {
         $this->dataSet = $worksheet;
         $this->setHeaders();
