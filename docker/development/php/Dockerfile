@@ -1,4 +1,4 @@
-FROM php:8.3-apache
+FROM php:8.2-apache
 
 # Definindo argumentos
 ARG uid
@@ -17,7 +17,7 @@ RUN useradd -G www-data,root -u $uid -d /home/$user $user && \
     chown -R $user:$user /home/$user
 
 # Configurando PATH
-ENV PATH "$PATH:/home/$user/.composer/vendor/bin"
+ENV PATH="$PATH:/home/$user/.composer/vendor/bin"
 
 # Definindo o usuário padrão
 USER $user
