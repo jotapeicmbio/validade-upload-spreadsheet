@@ -1,1 +1,3 @@
-docker-compose exec app php
+#! /bin/bash
+
+docker compose exec app php $@
