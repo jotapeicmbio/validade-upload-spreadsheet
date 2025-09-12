@@ -24,10 +24,9 @@ class ValidateTest extends TestCase
     #[Test]
     public function it_validates_floor_function()
     {
-        // $this->assertTrue(XformExpression::validate('floor(.) = 4', 4.7));
-        $this->assertFalse(XformExpression::validate('floor(.) = 5', 5.7));
-        // $this->assertFalse(XformExpression::validate('floor(.) = 5', 6.7));
-        // $this->assertFalse(XformExpression::validate('floor(.) = 7', 7.7));
+        $this->assertTrue(XformExpression::validate('floor(.) = 4', 4.7));
+        $this->assertTrue(XformExpression::validate('floor(.) = 5', 5.7));
+        $this->assertFalse(XformExpression::validate('floor(.) = 5', 4.7));
     }
 
     #[Test]

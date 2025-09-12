@@ -95,7 +95,6 @@ class XformExpression
     protected function evaluateExpression(string $expr)
     {
         try {
-            dd($expr, eval('return ' . $expr . ';'));
             return eval('return ' . $expr . ';');
         } catch (\Throwable $e) {
             throw new \RuntimeException("Erro ao avaliar expressão: $expr. " . $e->getMessage());
