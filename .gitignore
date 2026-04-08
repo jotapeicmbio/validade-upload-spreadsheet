@@ -1,5 +1,5 @@
-/package/vendor
+/vendor
 /forms
 .phpunit.result.cache
 .env
-package/composer.lock
+/composer.lock
