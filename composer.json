@@ -40,5 +40,13 @@
         "rap2hpoutre/fast-excel": "dev-master",
         "icmbio/validate-xpath-expression": "1.0.1",
         "ramsey/uuid": "5.x-dev"
+    },
+        "scripts": {
+        "test": "vendor/bin/phpunit --testdox",
+        "stan": "vendor/bin/phpstan analyse --memory-limit=1G --no-progress --debug",
+        "check": [
+            "@stan",
+            "@test"
+        ]
     }
 }
