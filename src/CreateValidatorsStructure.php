@@ -9,6 +9,10 @@ class CreateValidatorsStructure
     /** @var list<string> */
     protected const SELECT_FIELD_TYPES = ['select one', 'select all that apply'];
 
+    public function __construct()
+    {
+    }
+
     /**
      * Contrato alvo para portar a funcao Python create_validators_estructure.
      *
@@ -18,7 +22,7 @@ class CreateValidatorsStructure
      */
     public static function build(array $input, array $dynamicChoices = [], ?string $prefix = null): array
     {
-        return (new static())->buildValidatorsFromNode($input, $dynamicChoices, $prefix);
+        return (new self())->buildValidatorsFromNode($input, $dynamicChoices, $prefix);
     }
 
     /**
@@ -26,7 +30,7 @@ class CreateValidatorsStructure
      * @param array<string, string> $dynamicChoices
      * @return array<string, array<string, mixed>>
      */
-    protected function buildValidatorsFromNode(array $formNodeOrNodeList, array $dynamicChoices, ?string $prefix): array
+    public function buildValidatorsFromNode(array $formNodeOrNodeList, array $dynamicChoices, ?string $prefix): array
     {
         $validatorsByFieldPath = [];
 

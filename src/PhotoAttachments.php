@@ -6,6 +6,10 @@ namespace Icmbio\ValidateRegister;
 
 class PhotoAttachments
 {
+    public function __construct()
+    {
+    }
+
     /**
      * @param array<string, mixed> $data
      * @param array<string, array<string, mixed>> $validators
@@ -13,7 +17,7 @@ class PhotoAttachments
      */
     public static function getPhotosFromCollection(array $data, array $validators): array
     {
-        $photoCollector = new static();
+        $photoCollector = new self();
 
         return $photoCollector->collectPhotosFromNode($data, $validators);
     }
@@ -46,7 +50,7 @@ class PhotoAttachments
      * @param list<array{0: string, 1: string, 2: string}>|null $photos
      * @return list<array{0: string, 1: string, 2: string}>
      */
-    protected function collectPhotosFromNode(
+    public function collectPhotosFromNode(
         array $data,
         array $validators,
         ?array $photos = null,

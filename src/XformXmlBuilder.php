@@ -9,6 +9,10 @@ use DOMElement;
 
 class XformXmlBuilder
 {
+    public function __construct()
+    {
+    }
+
     /**
      * @param array<string, mixed> $data
      * @param list<string> $keys
@@ -22,7 +26,7 @@ class XformXmlBuilder
         ?string $uuid = null,
         ?string $timestamp = null
     ): string {
-        $builder = new static();
+        $builder = new self();
 
         return $builder->buildXmlDocument($data, $keys, $rootName, $rootId, $rootVersion, $uuid, $timestamp);
     }
@@ -31,7 +35,7 @@ class XformXmlBuilder
      * @param array<string, mixed> $data
      * @param list<string> $keys
      */
-    protected function buildXmlDocument(
+    public function buildXmlDocument(
         array $data,
         array $keys,
         string $rootName,

@@ -11,6 +11,10 @@ class ValidateCollectionData
     private const INVALID_CHOICE_MESSAGE     = 'O Valor (%s) nao e uma das escolhas validas: %s';
     private const INVALID_EXPRESSION_MESSAGE = 'Erro ao validar a expressao ("%s") [%s]';
 
+    public function __construct()
+    {
+    }
+
     /**
      * @param array<string, mixed> $data
      * @param array<string, array<string, mixed>> $validators
@@ -26,7 +30,7 @@ class ValidateCollectionData
         ?array $taxons = null
     ): array {
 
-        return (new static())->collectErrors($data, $validators, $index, $parentContext, $taxons);
+        return (new self())->collectErrors($data, $validators, $index, $parentContext, $taxons);
     }
 
     /**
@@ -36,7 +40,7 @@ class ValidateCollectionData
      * @param array<string, mixed>|null $parentContext
      * @return list<array<string, mixed>>
      */
-    protected function collectErrors(
+    public function collectErrors(
         array $data,
         array $validators,
         int $index,

@@ -1,12 +1,11 @@
 <?php
-
 namespace Tests\ValidateRegister\Validator;
 
 use Icmbio\ValidateRegister\Validator\StructureSpreadsheetData;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-class StructureSpreadsheetDataTest extends TestCase 
+class StructureSpreadsheetDataTest extends TestCase
 {
 
     #[Test]
@@ -26,7 +25,7 @@ class StructureSpreadsheetDataTest extends TestCase
             [null, " ", null, null, 'OtherInfo 54'],
             [null, ' ', null, null, 'OtherInfo 55'],
         ];
-        
+
         $expected = [
             ['header_1', 'header_2', 'header_3', 'header_4', 'header_5'],
             ['Label 1', 'Label 2', 'Label 3', 'Label 4', 'Label 5'],
@@ -36,8 +35,7 @@ class StructureSpreadsheetDataTest extends TestCase
 
         $actual = (new StructureSpreadsheetData($input))->output();
 
-        return $this->assertEquals($expected, $actual);
+        $this->assertEquals($expected, $actual);
     }
 
-    
 }

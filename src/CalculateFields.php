@@ -9,14 +9,8 @@ use Ramsey\Uuid\Uuid;
 
 class CalculateFields
 {
-    /**
-     * @param array<string, mixed> $data
-     * @param array<string, array<string, mixed>> $validators
-     * @return array<string, mixed>
-     */
-    public static function apply(array $data, array $validators): array
+    public function __construct()
     {
-        return (new static())->applyCalculatedFields($data, $validators);
     }
 
     /**
@@ -24,7 +18,17 @@ class CalculateFields
      * @param array<string, array<string, mixed>> $validators
      * @return array<string, mixed>
      */
-    protected function applyCalculatedFields(array $data, array $validators): array
+    public static function apply(array $data, array $validators): array
+    {
+        return (new self())->applyCalculatedFields($data, $validators);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, array<string, mixed>> $validators
+     * @return array<string, mixed>
+     */
+    public function applyCalculatedFields(array $data, array $validators): array
     {
         foreach ($validators as $fieldPath => $validator) {
             $calculationExpression = $validator['calculate'] ?? null;
