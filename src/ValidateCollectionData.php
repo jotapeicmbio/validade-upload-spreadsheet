@@ -129,7 +129,6 @@ class ValidateCollectionData
         $relevanceExpression    = (string) ($fieldValidator['relevant'] ?? 'true()');
 
         try {
-            // $isRelevant = (bool) \XformExpression::validate($relevanceExpression, $fieldValue, $context);
             $isRelevant = (bool) Xpath::validate($relevanceExpression, $fieldValue, $context);
             if (! $isRelevant) {
                 return $errors;
@@ -147,7 +146,6 @@ class ValidateCollectionData
 
         $requiredExpression = (string) ($fieldValidator['required'] ?? 'false()');
         try {
-            // $isRequired = (bool) \XformExpression::validate($requiredExpression, $fieldValue, $context);
             $isRequired = (bool) Xpath::validate($requiredExpression, $fieldValue, $context);
             if ($isRequired && $this->isEmptyRequiredValue($fieldValue)) {
                 $mustValidateConstraint = false;

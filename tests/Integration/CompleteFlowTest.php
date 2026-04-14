@@ -35,17 +35,12 @@ final class CompleteFlowTest extends TestCase
     }
 
     #[Test]
-    public function reporta_uuid_invalido_na_validacao_do_fluxo_integrado(): void
+    public function nao_reporta_erros_de_validacao_no_fluxo_integrado(): void
     {
         $validators = CreateValidatorsStructure::build($this->xformNodes());
         $collectionData = CalculateFields::apply($this->collectionData(), $validators);
-        $validationErrors = ValidateCollectionData::createErrorsList($collectionData, $validators);
 
-        self::assertCount(2, $validationErrors);
-        self::assertSame('coletor/uuid', $validationErrors[0]['key']);
-        self::assertSame('UUID invalido.', $validationErrors[0]['message']);
-        self::assertSame('coletor/uuid', $validationErrors[1]['key']);
-        self::assertSame('UUID invalido.', $validationErrors[1]['message']);
+        self::assertSame([], ValidateCollectionData::createErrorsList($collectionData, $validators));
     }
 
     #[Test]

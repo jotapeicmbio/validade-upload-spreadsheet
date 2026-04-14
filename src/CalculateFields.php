@@ -5,6 +5,7 @@ declare (strict_types = 1);
 namespace Icmbio\ValidateRegister;
 
 use Icmbio\ValidateXpathExpression\Xpath;
+use Ramsey\Uuid\Uuid;
 
 class CalculateFields
 {
@@ -93,12 +94,14 @@ class CalculateFields
                         ) {
                             continue;
                         }
-                        $rowData[$fieldPath] = Xpath::validate(
-                            $calculationExpression,
-                            null,
-                            $context,
-                            false
-                        );
+                        $rowData[$fieldPath] = $calculationExpression === 'uuid()'
+                            ? $this->generateUuidV4()
+                            : Xpath::validate(
+                                $calculationExpression,
+                                null,
+                                $context,
+                                false
+                            );
                     } catch (\Throwable) {
                         continue;
                     }
@@ -125,6 +128,11 @@ class CalculateFields
         }
 
         return $data;
+    }
+
+    protected function generateUuidV4(): string
+    {
+        return Uuid::uuid4()->toString();
     }
 
     protected function parentPath(string $fieldPath): string
