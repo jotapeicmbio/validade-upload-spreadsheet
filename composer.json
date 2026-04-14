@@ -32,11 +32,13 @@
         }
     },
     "require-dev": {
-        "phpunit/phpunit": "^10"
+        "phpunit/phpunit": "^10",
+        "phpstan/phpstan": "2.2.x-dev"
     },
     "require": {
         "phpoffice/phpspreadsheet": "dev-master",
         "rap2hpoutre/fast-excel": "dev-master",
-        "icmbio/validate-xpath-expression": "1.0.1"
+        "icmbio/validate-xpath-expression": "1.0.1",
+        "ramsey/uuid": "5.x-dev"
     }
 }
