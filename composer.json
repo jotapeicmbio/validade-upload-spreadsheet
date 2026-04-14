@@ -36,6 +36,7 @@
     },
     "require": {
         "phpoffice/phpspreadsheet": "dev-master",
-        "rap2hpoutre/fast-excel": "dev-master"
+        "rap2hpoutre/fast-excel": "dev-master",
+        "icmbio/validate-xpath-expression": "1.0.1"
     }
 }
