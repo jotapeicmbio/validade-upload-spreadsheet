@@ -1,0 +1,8 @@
+{
+  "name": "field_alpha",
+  "bind": {
+    "constraint": "string-length(.) > 2",
+    "required": "yes",
+    "relevant": "yes"
+  }
+}

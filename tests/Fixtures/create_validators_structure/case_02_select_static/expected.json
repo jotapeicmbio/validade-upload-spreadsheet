@@ -1,0 +1,17 @@
+{
+  "species_type": {
+    "calculate": null,
+    "choices": ["native", "exotic"],
+    "choices_labels": {
+      "native": "Nativa",
+      "exotic": "Exotica"
+    },
+    "constraint": "true()",
+    "constraint_message": "Erro",
+    "label": "species_type",
+    "relevant": "true()",
+    "required": "false()",
+    "required_message": "Campo obrigatorio",
+    "type": "select one"
+  }
+}

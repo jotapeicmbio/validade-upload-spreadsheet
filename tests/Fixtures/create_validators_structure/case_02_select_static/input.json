@@ -1,0 +1,8 @@
+{
+  "name": "species_type",
+  "type": "select one",
+  "children": [
+    {"name": "native", "label": "Nativa"},
+    {"name": "exotic", "label": "Exotica"}
+  ]
+}

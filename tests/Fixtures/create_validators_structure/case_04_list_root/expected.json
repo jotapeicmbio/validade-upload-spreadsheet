@@ -1,0 +1,26 @@
+{
+  "sample_date": {
+    "calculate": null,
+    "choices": null,
+    "choices_labels": null,
+    "constraint": "true()",
+    "constraint_message": "Erro",
+    "label": "sample_date",
+    "relevant": "true()",
+    "required": "false()",
+    "required_message": "Campo obrigatorio",
+    "type": "date"
+  },
+  "observer_name": {
+    "calculate": null,
+    "choices": null,
+    "choices_labels": null,
+    "constraint": "true()",
+    "constraint_message": "Erro",
+    "label": "observer_name",
+    "relevant": "true()",
+    "required": "true()",
+    "required_message": "Preencha o nome do observador",
+    "type": "text"
+  }
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "name": "sample_date",
+    "type": "date"
+  },
+  {
+    "name": "observer_name",
+    "bind": {
+      "required": "yes",
+      "jr:requiredMsg": "Preencha o nome do observador"
+    }
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "section_a/field_alpha": {
+    "calculate": null,
+    "choices": null,
+    "choices_labels": null,
+    "constraint": "string-length(.) > 2",
+    "constraint_message": "Erro",
+    "label": "field_alpha",
+    "relevant": "yes",
+    "required": "true()",
+    "required_message": "Campo obrigatorio",
+    "type": "text"
+  }
+}

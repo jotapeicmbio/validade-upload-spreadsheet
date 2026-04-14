@@ -1,0 +1,26 @@
+{
+  "collector/age": {
+    "calculate": null,
+    "choices": null,
+    "choices_labels": null,
+    "constraint": "true()",
+    "constraint_message": "Erro",
+    "label": "age",
+    "relevant": "true()",
+    "required": "true()",
+    "required_message": "Campo obrigatorio",
+    "type": "integer"
+  },
+  "collector": {
+    "calculate": null,
+    "choices": null,
+    "choices_labels": null,
+    "constraint": "true()",
+    "constraint_message": "Erro",
+    "label": "collector",
+    "relevant": "true()",
+    "required": "false()",
+    "required_message": "Campo obrigatorio",
+    "type": "group"
+  }
+}

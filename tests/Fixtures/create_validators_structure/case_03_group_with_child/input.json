@@ -1,0 +1,13 @@
+{
+  "name": "collector",
+  "type": "group",
+  "children": [
+    {
+      "name": "age",
+      "type": "integer",
+      "bind": {
+        "required": "yes"
+      }
+    }
+  ]
+}
