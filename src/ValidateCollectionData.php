@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\ValidateRegister;
 
@@ -11,9 +11,7 @@ class ValidateCollectionData
     private const INVALID_CHOICE_MESSAGE     = 'O Valor (%s) nao e uma das escolhas validas: %s';
     private const INVALID_EXPRESSION_MESSAGE = 'Erro ao validar a expressao ("%s") [%s]';
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * @param array<string, mixed> $data
@@ -27,7 +25,7 @@ class ValidateCollectionData
         array $validators,
         int $index = 0,
         ?array $parentContext = null,
-        ?array $taxons = null
+        ?array $taxons = null,
     ): array {
 
         return (new self())->collectErrors($data, $validators, $index, $parentContext, $taxons);
@@ -45,7 +43,7 @@ class ValidateCollectionData
         array $validators,
         int $index,
         ?array $parentContext,
-        ?array $taxons
+        ?array $taxons,
     ): array {
         $errors  = [];
         $context = $this->buildContext($data, $parentContext);
@@ -71,14 +69,14 @@ class ValidateCollectionData
             if ($this->isRepeatGroupValue($fieldValue)) {
                 $errors = array_merge(
                     $errors,
-                    $this->validateRepeatGroup($fieldKey, $fieldValue, $fieldValidator, $validators, $index, $context, $taxons)
+                    $this->validateRepeatGroup($fieldKey, $fieldValue, $fieldValidator, $validators, $index, $context, $taxons),
                 );
                 continue;
             }
 
             $errors = array_merge(
                 $errors,
-                $this->validateScalarField($fieldKey, $fieldValue, $fieldValidator, $context, $index, $taxons)
+                $this->validateScalarField($fieldKey, $fieldValue, $fieldValidator, $context, $index, $taxons),
             );
         }
 
@@ -126,7 +124,7 @@ class ValidateCollectionData
         array $fieldValidator,
         array $context,
         int $index,
-        ?array $taxons
+        ?array $taxons,
     ): array {
         $errors                 = [];
         $mustValidateConstraint = true;
@@ -142,7 +140,7 @@ class ValidateCollectionData
                 $index,
                 $fieldKey,
                 $fieldValue,
-                sprintf(self::INVALID_EXPRESSION_MESSAGE, $relevanceExpression, $exception->getMessage())
+                sprintf(self::INVALID_EXPRESSION_MESSAGE, $relevanceExpression, $exception->getMessage()),
             );
 
             return $errors;
@@ -157,7 +155,7 @@ class ValidateCollectionData
                     $index,
                     $fieldKey,
                     $fieldValue,
-                    (string) ($fieldValidator['required_message'] ?? 'Campo obrigatorio')
+                    (string) ($fieldValidator['required_message'] ?? 'Campo obrigatorio'),
                 );
             }
         } catch (\Throwable $exception) {
@@ -165,7 +163,7 @@ class ValidateCollectionData
                 $index,
                 $fieldKey,
                 $fieldValue,
-                sprintf(self::INVALID_EXPRESSION_MESSAGE, $requiredExpression, $exception->getMessage())
+                sprintf(self::INVALID_EXPRESSION_MESSAGE, $requiredExpression, $exception->getMessage()),
             );
         }
 
@@ -178,7 +176,7 @@ class ValidateCollectionData
                         $index,
                         $fieldKey,
                         $fieldValue,
-                        (string) ($fieldValidator['constraint_message'] ?? 'Erro')
+                        (string) ($fieldValidator['constraint_message'] ?? 'Erro'),
                     );
                 }
             }
@@ -187,18 +185,18 @@ class ValidateCollectionData
                 $index,
                 $fieldKey,
                 $fieldValue,
-                sprintf(self::INVALID_EXPRESSION_MESSAGE, $constraintExpression, $exception->getMessage())
+                sprintf(self::INVALID_EXPRESSION_MESSAGE, $constraintExpression, $exception->getMessage()),
             );
         }
 
         $errors = array_merge(
             $errors,
-            $this->validateTaxonList($fieldKey, $fieldValue, $index, $taxons)
+            $this->validateTaxonList($fieldKey, $fieldValue, $index, $taxons),
         );
 
         $errors = array_merge(
             $errors,
-            $this->validateChoices($fieldKey, $fieldValue, $fieldValidator, $index)
+            $this->validateChoices($fieldKey, $fieldValue, $fieldValidator, $index),
         );
 
         return $errors;
@@ -219,7 +217,7 @@ class ValidateCollectionData
         array $validators,
         int $index,
         array $context,
-        ?array $taxons
+        ?array $taxons,
     ): array {
         $errors              = [];
         $relevanceExpression = (string) ($fieldValidator['relevant'] ?? 'true()');
@@ -231,7 +229,7 @@ class ValidateCollectionData
                 $index,
                 $fieldKey,
                 $fieldValue,
-                sprintf(self::INVALID_EXPRESSION_MESSAGE, $relevanceExpression, $exception->getMessage())
+                sprintf(self::INVALID_EXPRESSION_MESSAGE, $relevanceExpression, $exception->getMessage()),
             );
 
             return $errors;
@@ -246,7 +244,7 @@ class ValidateCollectionData
                 }
                 $errors = array_merge(
                     $errors,
-                    $this->collectErrors($childNode, $validators, $runningIndex, $context, $taxons)
+                    $this->collectErrors($childNode, $validators, $runningIndex, $context, $taxons),
                 );
             }
 
@@ -260,8 +258,8 @@ class ValidateCollectionData
                 '',
                 sprintf(
                     'Nao e permitido entrar com valores para este grupo, pois nao atendeu o criterio %s',
-                    $relevanceExpression
-                )
+                    $relevanceExpression,
+                ),
             );
         }
 
@@ -292,7 +290,7 @@ class ValidateCollectionData
                 $index,
                 $fieldKey,
                 $taxonValue,
-                sprintf(self::INVALID_CHOICE_MESSAGE, (string) $taxonValue, implode(', ', $taxons))
+                sprintf(self::INVALID_CHOICE_MESSAGE, (string) $taxonValue, implode(', ', $taxons)),
             );
         }
 
@@ -313,10 +311,10 @@ class ValidateCollectionData
         }
 
         if (
-            str_ends_with($fieldKey, 'uc') ||
-            str_ends_with($fieldKey, 'estacao_amostral') ||
-            str_ends_with($fieldKey, 'unidade_amostral') ||
-            str_ends_with($fieldKey, 'taxon_lista')
+            str_ends_with($fieldKey, 'uc')
+            || str_ends_with($fieldKey, 'estacao_amostral')
+            || str_ends_with($fieldKey, 'unidade_amostral')
+            || str_ends_with($fieldKey, 'taxon_lista')
         ) {
             return $errors;
         }
@@ -330,7 +328,7 @@ class ValidateCollectionData
                     $index,
                     $fieldKey,
                     $fieldValue,
-                    sprintf(self::INVALID_CHOICE_MESSAGE, (string) $fieldValue, $choiceListAsString)
+                    sprintf(self::INVALID_CHOICE_MESSAGE, (string) $fieldValue, $choiceListAsString),
                 );
             }
             return $errors;
@@ -345,7 +343,7 @@ class ValidateCollectionData
                         $index,
                         $fieldKey,
                         $fieldValue,
-                        sprintf(self::INVALID_CHOICE_MESSAGE, $singleValue, $choiceListAsString)
+                        sprintf(self::INVALID_CHOICE_MESSAGE, $singleValue, $choiceListAsString),
                     );
                 }
             }
@@ -419,7 +417,7 @@ class ValidateCollectionData
     {
         return (bool) preg_match(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
-            $value
+            $value,
         );
     }
 }

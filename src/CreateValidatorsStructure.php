@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\ValidateRegister;
 
@@ -9,9 +9,7 @@ class CreateValidatorsStructure
     /** @var list<string> */
     protected const SELECT_FIELD_TYPES = ['select one', 'select all that apply'];
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * Contrato alvo para portar a funcao Python create_validators_estructure.
@@ -125,7 +123,7 @@ class CreateValidatorsStructure
         array $formFieldNode,
         string $fieldType,
         string $fieldPath,
-        array $dynamicChoices
+        array $dynamicChoices,
     ): bool {
         return isset($formFieldNode['children'])
         && is_array($formFieldNode['children'])

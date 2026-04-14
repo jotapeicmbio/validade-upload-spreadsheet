@@ -1,4 +1,5 @@
 <?php
+
 namespace Tests\ValidateRegister\Validator;
 
 use Icmbio\ValidateRegister\Validator\StructureSpreadsheetData;
@@ -7,7 +8,6 @@ use PHPUnit\Framework\TestCase;
 
 class StructureSpreadsheetDataTest extends TestCase
 {
-
     #[Test]
     public function devePreencherAsLinhasVaziasComDadosDaLinhaValida(): void
     {

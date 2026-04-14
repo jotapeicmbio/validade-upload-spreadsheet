@@ -1,14 +1,12 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\ValidateRegister;
 
 class PhotoAttachments
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * @param array<string, mixed> $data
@@ -54,7 +52,7 @@ class PhotoAttachments
         array $data,
         array $validators,
         ?array $photos = null,
-        string $indexPath = ''
+        string $indexPath = '',
     ): array {
         $photos ??= [];
 
@@ -68,7 +66,7 @@ class PhotoAttachments
                         $childNode,
                         $validators,
                         $photos,
-                        $indexPath . '-' . $itemIndex
+                        $indexPath . '-' . $itemIndex,
                     );
                 }
                 continue;

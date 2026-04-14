@@ -1,4 +1,5 @@
 <?php
+
 namespace Jotapegue\Phpxform\helpers;
 
 use InvalidArgumentException;

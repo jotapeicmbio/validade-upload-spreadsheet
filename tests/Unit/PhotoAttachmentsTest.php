@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\SrcPhp\Tests\Unit;
 
@@ -35,7 +35,7 @@ final class PhotoAttachmentsTest extends TestCase
                 ['coletor/foto', 'ana.jpg', '-0'],
                 ['coletor/foto', 'bruno.jpg', '-1'],
             ],
-            $photos
+            $photos,
         );
     }
 
@@ -56,12 +56,12 @@ final class PhotoAttachmentsTest extends TestCase
         $errors = PhotoAttachments::validatePhotos(
             $data,
             $validators,
-            ['ana.jpg']
+            ['ana.jpg'],
         );
 
         self::assertSame(
             ['Foto bruno.jpg nao encontrada no ZIP'],
-            $errors
+            $errors,
         );
     }
 }

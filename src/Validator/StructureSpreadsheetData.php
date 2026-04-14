@@ -1,4 +1,5 @@
 <?php
+
 namespace Icmbio\ValidateRegister\Validator;
 
 class StructureSpreadsheetData

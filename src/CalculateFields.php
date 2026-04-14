@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\ValidateRegister;
 
@@ -9,9 +9,7 @@ use Ramsey\Uuid\Uuid;
 
 class CalculateFields
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * @param array<string, mixed> $data
@@ -78,7 +76,7 @@ class CalculateFields
         array $data,
         string $fieldPath,
         string $calculationExpression,
-        ?array $parentContext = null
+        ?array $parentContext = null,
     ): array {
         $context         = $this->buildContext($data, $parentContext);
         $parentFieldPath = $this->parentPath($fieldPath);
@@ -104,7 +102,7 @@ class CalculateFields
                                 $calculationExpression,
                                 null,
                                 $context,
-                                false
+                                false,
                             );
                     } catch (\Throwable) {
                         continue;
@@ -124,7 +122,7 @@ class CalculateFields
                         $rowData,
                         $fieldPath,
                         $calculationExpression,
-                        $context
+                        $context,
                     );
                 }
                 $data[$key] = $value;

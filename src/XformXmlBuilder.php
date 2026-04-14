@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\ValidateRegister;
 
@@ -9,9 +9,7 @@ use DOMElement;
 
 class XformXmlBuilder
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     /**
      * @param array<string, mixed> $data
@@ -24,7 +22,7 @@ class XformXmlBuilder
         string $rootId,
         string $rootVersion,
         ?string $uuid = null,
-        ?string $timestamp = null
+        ?string $timestamp = null,
     ): string {
         $builder = new self();
 
@@ -42,7 +40,7 @@ class XformXmlBuilder
         string $rootId,
         string $rootVersion,
         ?string $uuid,
-        ?string $timestamp
+        ?string $timestamp,
     ): string {
         $normalizedData       = $this->addEmptyKeysInDict($data, $keys);
         $preparedData         = $this->prepareDataToXml([$normalizedData])[0] ?? [];
@@ -182,7 +180,7 @@ class XformXmlBuilder
         DOMDocument $document,
         string $rootName,
         string $rootId,
-        string $rootVersion
+        string $rootVersion,
     ): DOMElement {
         $rootElement = $document->createElement($rootName);
         $rootElement->setAttribute('version', $rootVersion);

@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\SrcPhp\Tests\Integration;
 
@@ -26,11 +26,11 @@ final class CompleteFlowTest extends TestCase
         self::assertArrayHasKey('coletor/uuid', $collectionData['coletor'][1]);
         self::assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
-            $collectionData['coletor'][0]['coletor/uuid']
+            $collectionData['coletor'][0]['coletor/uuid'],
         );
         self::assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
-            $collectionData['coletor'][1]['coletor/uuid']
+            $collectionData['coletor'][1]['coletor/uuid'],
         );
     }
 
@@ -51,7 +51,7 @@ final class CompleteFlowTest extends TestCase
 
         self::assertSame(
             [],
-            PhotoAttachments::validatePhotos($collectionData, $validators, ['ana.jpg', 'bruno.jpg'])
+            PhotoAttachments::validatePhotos($collectionData, $validators, ['ana.jpg', 'bruno.jpg']),
         );
     }
 
@@ -67,7 +67,7 @@ final class CompleteFlowTest extends TestCase
             'coleta_id',
             '2026.1',
             null,
-            '2026-04-01T12:00:00.000-03:00'
+            '2026-04-01T12:00:00.000-03:00',
         );
 
         $xmlDocument = new DOMDocument();

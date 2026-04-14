@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\SrcPhp\Tests\Unit;
 
@@ -37,11 +37,11 @@ final class CalculateFieldsTest extends TestCase
         self::assertArrayHasKey('coletor/uuid', $actual['coletor'][1]);
         self::assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
-            $actual['coletor'][0]['coletor/uuid']
+            $actual['coletor'][0]['coletor/uuid'],
         );
         self::assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
-            $actual['coletor'][1]['coletor/uuid']
+            $actual['coletor'][1]['coletor/uuid'],
         );
         self::assertNotSame('', $actual['coletor'][0]['coletor/uuid']);
         self::assertNotSame('', $actual['coletor'][1]['coletor/uuid']);

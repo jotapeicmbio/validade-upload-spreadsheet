@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types = 1);
+declare (strict_types=1);
 
 namespace Icmbio\SrcPhp\Tests\Unit;
 
@@ -32,7 +32,7 @@ final class XformXmlBuilderTest extends TestCase
             'xml_id',
             '1.0',
             null,
-            '2026-04-01T10:20:30.000-03:00'
+            '2026-04-01T10:20:30.000-03:00',
         );
 
         $doc = new DOMDocument();
@@ -71,7 +71,7 @@ final class XformXmlBuilderTest extends TestCase
             'xml_id',
             '1.0',
             'my-uuid-value',
-            '2026-04-01T10:20:30.000-03:00'
+            '2026-04-01T10:20:30.000-03:00',
         );
 
         $doc = new DOMDocument();
