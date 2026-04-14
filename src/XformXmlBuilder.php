@@ -137,7 +137,7 @@ class XformXmlBuilder
         }
 
         foreach ($dataList as $rowIndex => $row) {
-            if (! is_array($row) || $row === []) {
+            if ($row === []) {
                 continue;
             }
             $newRow = $row;

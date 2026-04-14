@@ -9,7 +9,7 @@ class StructureSpreadsheetDataTest extends TestCase
 {
 
     #[Test]
-    public function devePreencherAsLinhasVaziasComDadosDaLinhaValida()
+    public function devePreencherAsLinhasVaziasComDadosDaLinhaValida(): void
     {
         $input = [
             ['header_1', 'header_2', 'header_3', 'header_4', 'header_5'],

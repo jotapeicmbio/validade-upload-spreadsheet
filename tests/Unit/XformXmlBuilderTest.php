@@ -39,9 +39,9 @@ final class XformXmlBuilderTest extends TestCase
         $doc->loadXML($xml);
         $xpath = new DOMXPath($doc);
 
-        self::assertSame('xml', $doc->documentElement?->nodeName);
-        self::assertSame('xml_id', $doc->documentElement?->getAttribute('id'));
-        self::assertSame('1.0', $doc->documentElement?->getAttribute('version'));
+        self::assertSame('xml', $doc->documentElement->nodeName);
+        self::assertSame('xml_id', $doc->documentElement->getAttribute('id'));
+        self::assertSame('1.0', $doc->documentElement->getAttribute('version'));
         self::assertSame('http://openrosa.org/javarosa', $doc->documentElement?->getAttribute('xmlns:jr'));
 
         self::assertSame('Unidade 1', $xpath->evaluate('string(/xml/uc)'));

@@ -1,15 +1,16 @@
 <?php
-
 namespace Icmbio\ValidateRegister\Validator;
 
-use function Jotapegue\Phpxform\helpers\dd;
-
-class StructureSpreadsheetData 
+class StructureSpreadsheetData
 {
+    /** @var array<int, array<int, mixed>> */
     protected array $worksheet = [];
+    /** @var array<int, string> */
     protected array $headers = [];
+    /** @var array<int, string> */
     protected array $labels = [];
 
+    /** @param array<int, array<int, mixed>> $worksheet */
     public function __construct(array $worksheet)
     {
         $this->worksheet = $worksheet;
@@ -17,34 +18,36 @@ class StructureSpreadsheetData
         $this->setLabels();
     }
 
-    private function setHeaders() : void
+    private function setHeaders(): void
     {
         $this->headers = $this->worksheet[0] ?? [];
         unset($this->worksheet[0]);
     }
- 
-    private function setLabels() : void
+
+    private function setLabels(): void
     {
         $this->labels = $this->worksheet[1] ?? [];
         unset($this->worksheet[1]);
     }
 
-    public function output() : array
+    /** @return array<int, array<int, mixed>> */
+    public function output(): array
     {
         return [
             $this->headers,
             $this->labels,
-            ...$this->validadeRow()
+            ...$this->validadeRow(),
         ];
     }
 
-    protected function validadeRow() : array
+    /** @return array<int, array<int, mixed>> */
+    protected function validadeRow(): array
     {
         // reindex para garantir percorremos em ordem correta
-        $rows = array_values($this->worksheet);
-        $result = [];
+        $rows         = array_values($this->worksheet);
+        $result       = [];
         $currentModel = null;
-        $numCols = count($this->headers) ?: 0;
+        $numCols      = count($this->headers) ?: 0;
 
         foreach ($rows as $row) {
             // pad para garantir colunas consistentes
@@ -83,7 +86,12 @@ class StructureSpreadsheetData
         return $result;
     }
 
-    protected function validateColumn(array $modelRow, array $currentRow) : array
+    /**
+     * @param array<int, mixed> $modelRow
+     * @param array<int, mixed> $currentRow
+     * @return array<int, mixed>
+     */
+    protected function validateColumn(array $modelRow, array $currentRow): array
     {
         $numCols = count($this->headers);
 
@@ -98,7 +106,7 @@ class StructureSpreadsheetData
             }
 
             // se no model já há um valor
-            if (array_key_exists($i, $modelRow) && !$this->validateCell($modelRow[$i])) {
+            if (array_key_exists($i, $modelRow) && ! $this->validateCell($modelRow[$i])) {
                 if (is_array($modelRow[$i])) {
                     // já é array -> append
                     $modelRow[$i][] = $cell;
@@ -115,7 +123,7 @@ class StructureSpreadsheetData
         return $modelRow;
     }
 
-    protected function validateCell (mixed $cell) : bool
+    protected function validateCell(mixed $cell): bool
     {
         // considera vazio: null ou string composta só por espaços ("" / " " / "\t" etc)
         if (is_null($cell)) {
