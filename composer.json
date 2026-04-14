@@ -33,7 +33,8 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^10",
-        "phpstan/phpstan": "2.2.x-dev"
+        "phpstan/phpstan": "2.2.x-dev",
+        "friendsofphp/php-cs-fixer": "dev-master"
     },
     "require": {
         "phpoffice/phpspreadsheet": "dev-master",
