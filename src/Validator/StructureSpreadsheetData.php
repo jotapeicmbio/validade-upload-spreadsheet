@@ -47,10 +47,10 @@ class StructureSpreadsheetData
     protected function validadeRow(): array
     {
         // reindex para garantir percorremos em ordem correta
-        $rows         = array_values($this->worksheet);
-        $result       = [];
+        $rows = array_values($this->worksheet);
+        $result = [];
         $currentModel = null;
-        $numCols      = count($this->headers) ?: 0;
+        $numCols = count($this->headers) ?: 0;
 
         foreach ($rows as $row) {
             // pad para garantir colunas consistentes

@@ -49,10 +49,10 @@ final class CreateValidatorsStructureContractTest extends TestCase
     private function buildValidators(array $input, ?string $prefix = null): array
     {
         return CreateValidatorsStructure::build($input, [
-            'uc'               => 'generate_choices_uc',
+            'uc' => 'generate_choices_uc',
             'estacao_amostral' => 'generate_choices_ea',
             'unidade_amostral' => 'generate_choices_ua',
-            'taxon_lista'      => 'generate_choices_taxon',
+            'taxon_lista' => 'generate_choices_taxon',
         ], $prefix);
     }
 

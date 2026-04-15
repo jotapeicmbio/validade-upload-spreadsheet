@@ -78,7 +78,7 @@ class CalculateFields
         string $calculationExpression,
         ?array $parentContext = null,
     ): array {
-        $context         = $this->buildContext($data, $parentContext);
+        $context = $this->buildContext($data, $parentContext);
         $parentFieldPath = $this->parentPath($fieldPath);
 
         foreach ($data as $key => $value) {

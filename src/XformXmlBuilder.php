@@ -42,8 +42,8 @@ class XformXmlBuilder
         ?string $uuid,
         ?string $timestamp,
     ): string {
-        $normalizedData       = $this->addEmptyKeysInDict($data, $keys);
-        $preparedData         = $this->prepareDataToXml([$normalizedData])[0] ?? [];
+        $normalizedData = $this->addEmptyKeysInDict($data, $keys);
+        $preparedData = $this->prepareDataToXml([$normalizedData])[0] ?? [];
         $preparedDataWithMeta = $this->prepareMetaXml($preparedData, $uuid);
 
         $dateTime = $timestamp ?? (new \DateTimeImmutable())->format('Y-m-d\TH:i:s.000-03:00');
@@ -66,9 +66,9 @@ class XformXmlBuilder
             $preparedDataWithMeta['devicephonenum'] = 'phonenumber not found';
         }
 
-        $document               = new DOMDocument('1.0', 'UTF-8');
+        $document = new DOMDocument('1.0', 'UTF-8');
         $document->formatOutput = false;
-        $rootElement            = $this->createRootElement($document, $rootName, $rootId, $rootVersion);
+        $rootElement = $this->createRootElement($document, $rootName, $rootId, $rootVersion);
         $document->appendChild($rootElement);
 
         $this->appendDataToXml($document, $rootElement, $preparedDataWithMeta);
@@ -99,8 +99,8 @@ class XformXmlBuilder
      */
     protected function ensurePathExists(array $data, string $fullKeyPath, int $depth): array
     {
-        $pathSegments    = explode('/', $fullKeyPath);
-        $currentPath     = implode('/', array_slice($pathSegments, 0, $depth + 1));
+        $pathSegments = explode('/', $fullKeyPath);
+        $currentPath = implode('/', array_slice($pathSegments, 0, $depth + 1));
         $lastPathSegment = $pathSegments[array_key_last($pathSegments)];
 
         if (
@@ -167,7 +167,7 @@ class XformXmlBuilder
      */
     protected function prepareMetaXml(array $data, ?string $uuid): array
     {
-        $uuidValue  = $uuid === null ? 'None' : $uuid;
+        $uuidValue = $uuid === null ? 'None' : $uuid;
         $instanceId = array_key_exists('instanceID', $data)
             ? (string) $data['instanceID']
             : sprintf('uuid:%s', $uuidValue);

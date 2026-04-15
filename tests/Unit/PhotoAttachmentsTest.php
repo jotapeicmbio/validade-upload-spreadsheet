@@ -14,14 +14,14 @@ final class PhotoAttachmentsTest extends TestCase
     public function coleta_campos_de_foto_com_caminho_de_indice(): void
     {
         $validators = [
-            'foto_geral'   => ['type' => 'photo'],
+            'foto_geral' => ['type' => 'photo'],
             'coletor/foto' => ['type' => 'photo'],
             'coletor/nome' => ['type' => 'text'],
         ];
 
         $data = [
             'foto_geral' => 'capa.jpg',
-            'coletor'    => [
+            'coletor' => [
                 ['coletor/nome' => 'Ana', 'coletor/foto' => 'ana.jpg'],
                 ['coletor/nome' => 'Bruno', 'coletor/foto' => 'bruno.jpg'],
             ],
