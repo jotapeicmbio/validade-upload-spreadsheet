@@ -1,8 +1,10 @@
 <?php
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
+declare(strict_types=1);
 
 use function Jotapegue\Phpxform\helpers\app_base;
+
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -68,6 +70,7 @@ class index
                 $row[$key] = $linhaValidaAtual[$key];
             }
         }
+
         return $row;
     }
 

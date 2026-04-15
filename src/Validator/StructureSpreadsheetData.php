@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Icmbio\ValidateRegister\Validator;
 
 class StructureSpreadsheetData
@@ -58,6 +60,7 @@ class StructureSpreadsheetData
             foreach ($row as $cell) {
                 if ($this->validateCell($cell)) {
                     $isModel = false;
+
                     break;
                 }
             }
@@ -68,6 +71,7 @@ class StructureSpreadsheetData
                     $result[] = $currentModel;
                 }
                 $currentModel = $row;
+
                 continue;
             }
 
@@ -133,6 +137,7 @@ class StructureSpreadsheetData
         if (is_string($cell) && trim($cell) === '') {
             return true;
         }
+
         return false;
     }
 }
