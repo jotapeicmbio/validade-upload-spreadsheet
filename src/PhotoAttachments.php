@@ -28,8 +28,8 @@ class PhotoAttachments
      */
     public static function validatePhotos(array $data, array $validators, array $existingPhotos): array
     {
-        $errors              = [];
-        $photosByPath        = self::getPhotosFromCollection($data, $validators);
+        $errors = [];
+        $photosByPath = self::getPhotosFromCollection($data, $validators);
         $existingPhotoLookup = array_flip($existingPhotos);
 
         foreach ($photosByPath as $photoTuple) {

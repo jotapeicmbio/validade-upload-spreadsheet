@@ -100,8 +100,8 @@ final class CompleteFlowTest extends TestCase
                 ],
             ],
             [
-                'name'     => 'coletor',
-                'type'     => 'repeat',
+                'name' => 'coletor',
+                'type' => 'repeat',
                 'children' => [
                     [
                         'name' => 'uuid',
@@ -114,8 +114,8 @@ final class CompleteFlowTest extends TestCase
                         'name' => 'nome',
                         'type' => 'text',
                         'bind' => [
-                            'required'         => 'yes',
-                            'constraint'       => 'string-length(.) >= 3',
+                            'required' => 'yes',
+                            'constraint' => 'string-length(.) >= 3',
                             'jr:constraintMsg' => 'Nome invalido',
                         ],
                     ],
@@ -123,15 +123,15 @@ final class CompleteFlowTest extends TestCase
                         'name' => 'idade',
                         'type' => 'integer',
                         'bind' => [
-                            'constraint'       => '. >= 18',
+                            'constraint' => '. >= 18',
                             'jr:constraintMsg' => 'Idade minima 18',
                         ],
                     ],
                     [
-                        'name'     => 'sexo',
-                        'type'     => 'select one',
-                        'bind'     => [
-                            'required'       => 'yes',
+                        'name' => 'sexo',
+                        'type' => 'select one',
+                        'bind' => [
+                            'required' => 'yes',
                             'jr:requiredMsg' => 'Sexo obrigatorio',
                         ],
                         'children' => [
@@ -154,19 +154,19 @@ final class CompleteFlowTest extends TestCase
     private function collectionData(): array
     {
         return [
-            'uc'      => 'UC-001',
+            'uc' => 'UC-001',
             'coletor' => [
                 [
-                    'coletor/nome'  => 'Ana',
+                    'coletor/nome' => 'Ana',
                     'coletor/idade' => 22,
-                    'coletor/sexo'  => 'F',
-                    'coletor/foto'  => 'ana.jpg',
+                    'coletor/sexo' => 'F',
+                    'coletor/foto' => 'ana.jpg',
                 ],
                 [
-                    'coletor/nome'  => 'Bruno',
+                    'coletor/nome' => 'Bruno',
                     'coletor/idade' => 30,
-                    'coletor/sexo'  => 'M',
-                    'coletor/foto'  => 'bruno.jpg',
+                    'coletor/sexo' => 'M',
+                    'coletor/foto' => 'bruno.jpg',
                 ],
             ],
         ];

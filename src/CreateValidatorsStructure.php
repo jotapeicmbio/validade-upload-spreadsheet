@@ -35,7 +35,7 @@ class CreateValidatorsStructure
         if ($this->isAssociativeArray($formNodeOrNodeList)) {
             /** @var array<string, mixed> $formFieldNode */
             $formFieldNode = $formNodeOrNodeList;
-            $fieldName     = (string) ($formFieldNode['name'] ?? '');
+            $fieldName = (string) ($formFieldNode['name'] ?? '');
             if ($fieldName === '') {
                 return $validatorsByFieldPath;
             }
@@ -44,17 +44,17 @@ class CreateValidatorsStructure
                 ? sprintf('%s/%s', $prefix, $fieldName)
                 : $fieldName;
 
-            $fieldType  = (string) ($formFieldNode['type'] ?? 'text');
+            $fieldType = (string) ($formFieldNode['type'] ?? 'text');
             $fieldLabel = $this->normalizeLabelValue($formFieldNode['label'] ?? $fieldName, $fieldName);
 
             $calculationExpression = null;
-            $availableChoices      = null;
+            $availableChoices = null;
             $availableChoiceLabels = null;
-            $constraintExpression  = 'true()';
-            $constraintMessage     = 'Erro';
-            $relevanceExpression   = 'true()';
-            $requiredExpression    = 'false()';
-            $requiredMessage       = 'Campo obrigatorio';
+            $constraintExpression = 'true()';
+            $constraintMessage = 'Erro';
+            $relevanceExpression = 'true()';
+            $requiredExpression = 'false()';
+            $requiredMessage = 'Campo obrigatorio';
 
             if ($this->shouldExtractStaticChoices($formFieldNode, $fieldType, $fieldPath, $dynamicChoices)) {
                 [$availableChoices, $availableChoiceLabels] = $this->extractChoicesFromChildren($formFieldNode);
@@ -64,13 +64,13 @@ class CreateValidatorsStructure
                 $bindOptions = $formFieldNode['bind'];
                 foreach ($bindOptions as $bindKey => $bindValue) {
                     match ((string) $bindKey) {
-                        'constraint'       => $constraintExpression    = (string) $bindValue,
+                        'constraint' => $constraintExpression = (string) $bindValue,
                         'jr:constraintMsg' => $constraintMessage = (string) $bindValue,
-                        'required'         => $requiredExpression        = ((string) $bindValue === 'yes') ? 'true()' : (string) $bindValue,
-                        'jr:requiredMsg'   => $requiredMessage     = (string) $bindValue,
-                        'relevant'         => $relevanceExpression       = (string) $bindValue,
-                        'calculate'        => $calculationExpression    = (string) $bindValue,
-                        default            => null,
+                        'required' => $requiredExpression = ((string) $bindValue === 'yes') ? 'true()' : (string) $bindValue,
+                        'jr:requiredMsg' => $requiredMessage = (string) $bindValue,
+                        'relevant' => $relevanceExpression = (string) $bindValue,
+                        'calculate' => $calculationExpression = (string) $bindValue,
+                        default => null,
                     };
                 }
             }
@@ -87,16 +87,16 @@ class CreateValidatorsStructure
             }
 
             $validatorsByFieldPath[$fieldPath] = [
-                'calculate'          => $calculationExpression,
-                'choices'            => $availableChoices,
-                'choices_labels'     => $availableChoiceLabels,
-                'constraint'         => $constraintExpression,
+                'calculate' => $calculationExpression,
+                'choices' => $availableChoices,
+                'choices_labels' => $availableChoiceLabels,
+                'constraint' => $constraintExpression,
                 'constraint_message' => $constraintMessage,
-                'label'              => $fieldLabel,
-                'relevant'           => $relevanceExpression,
-                'required'           => $requiredExpression,
-                'required_message'   => $requiredMessage,
-                'type'               => $fieldType,
+                'label' => $fieldLabel,
+                'relevant' => $relevanceExpression,
+                'required' => $requiredExpression,
+                'required_message' => $requiredMessage,
+                'type' => $fieldType,
             ];
 
             return $validatorsByFieldPath;
@@ -137,7 +137,7 @@ class CreateValidatorsStructure
      */
     protected function extractChoicesFromChildren(array $formFieldNode): array
     {
-        $choiceNames  = [];
+        $choiceNames = [];
         $choiceLabels = [];
 
         /** @var list<mixed> $children */

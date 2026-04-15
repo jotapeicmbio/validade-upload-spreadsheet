@@ -15,13 +15,13 @@ final class ValidateCollectionDataTest extends TestCase
     {
         $validators = [
             'coletor/nome' => [
-                'type'               => 'text',
-                'relevant'           => 'true()',
-                'required'           => 'false()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'string-length(.) >= 3',
+                'type' => 'text',
+                'relevant' => 'true()',
+                'required' => 'false()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'string-length(.) >= 3',
                 'constraint_message' => 'Nome muito curto',
-                'choices'            => null,
+                'choices' => null,
             ],
         ];
 
@@ -39,13 +39,13 @@ final class ValidateCollectionDataTest extends TestCase
     {
         $validators = [
             'coletor/nome' => [
-                'type'               => 'text',
-                'relevant'           => 'true()',
-                'required'           => 'true()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'true()',
+                'type' => 'text',
+                'relevant' => 'true()',
+                'required' => 'true()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'true()',
                 'constraint_message' => 'Erro',
-                'choices'            => null,
+                'choices' => null,
             ],
         ];
 
@@ -62,13 +62,13 @@ final class ValidateCollectionDataTest extends TestCase
     {
         $validators = [
             'coletor/nome' => [
-                'type'               => 'text',
-                'relevant'           => 'false()',
-                'required'           => 'true()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'string-length(.) >= 20',
+                'type' => 'text',
+                'relevant' => 'false()',
+                'required' => 'true()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'string-length(.) >= 20',
                 'constraint_message' => 'Nome muito curto',
-                'choices'            => null,
+                'choices' => null,
             ],
         ];
 
@@ -84,13 +84,13 @@ final class ValidateCollectionDataTest extends TestCase
     {
         $validators = [
             'coletor/sexo' => [
-                'type'               => 'select one',
-                'relevant'           => 'true()',
-                'required'           => 'false()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'true()',
+                'type' => 'select one',
+                'relevant' => 'true()',
+                'required' => 'false()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'true()',
                 'constraint_message' => 'Erro',
-                'choices'            => ['M', 'F'],
+                'choices' => ['M', 'F'],
             ],
         ];
 
@@ -107,13 +107,13 @@ final class ValidateCollectionDataTest extends TestCase
     {
         $validators = [
             'coletor/idade' => [
-                'type'               => 'integer',
-                'relevant'           => 'true()',
-                'required'           => 'false()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'true()',
+                'type' => 'integer',
+                'relevant' => 'true()',
+                'required' => 'false()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'true()',
                 'constraint_message' => 'Erro',
-                'choices'            => null,
+                'choices' => null,
             ],
         ];
 
@@ -130,13 +130,13 @@ final class ValidateCollectionDataTest extends TestCase
     {
         $validators = [
             'coletor/nome' => [
-                'type'               => 'text',
-                'relevant'           => 'unsupported_expression()',
-                'required'           => 'false()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'true()',
+                'type' => 'text',
+                'relevant' => 'unsupported_expression()',
+                'required' => 'false()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'true()',
                 'constraint_message' => 'Erro',
-                'choices'            => null,
+                'choices' => null,
             ],
         ];
 
@@ -152,43 +152,43 @@ final class ValidateCollectionDataTest extends TestCase
     public function valida_filhos_repetidos_aninhados_quando_grupo_e_relevante(): void
     {
         $validators = [
-            'coletor'       => [
-                'type'               => 'repeat',
-                'relevant'           => 'true()',
-                'required'           => 'false()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'true()',
+            'coletor' => [
+                'type' => 'repeat',
+                'relevant' => 'true()',
+                'required' => 'false()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'true()',
                 'constraint_message' => 'Erro',
-                'choices'            => null,
+                'choices' => null,
             ],
-            'coletor/nome'  => [
-                'type'               => 'text',
-                'relevant'           => 'true()',
-                'required'           => 'true()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'string-length(.) >= 3',
+            'coletor/nome' => [
+                'type' => 'text',
+                'relevant' => 'true()',
+                'required' => 'true()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'string-length(.) >= 3',
                 'constraint_message' => 'Nome muito curto',
-                'choices'            => null,
+                'choices' => null,
             ],
             'coletor/idade' => [
-                'type'               => 'integer',
-                'relevant'           => 'true()',
-                'required'           => 'false()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => '. >= 18',
+                'type' => 'integer',
+                'relevant' => 'true()',
+                'required' => 'false()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => '. >= 18',
                 'constraint_message' => 'Idade minima 18',
-                'choices'            => null,
+                'choices' => null,
             ],
         ];
 
         $data = [
             'coletor' => [
                 [
-                    'coletor/nome'  => 'Al',
+                    'coletor/nome' => 'Al',
                     'coletor/idade' => 'dez',
                 ],
                 [
-                    'coletor/nome'  => '',
+                    'coletor/nome' => '',
                     'coletor/idade' => 17,
                 ],
             ],
@@ -213,23 +213,23 @@ final class ValidateCollectionDataTest extends TestCase
     public function retorna_erro_quando_grupo_repeat_nao_e_relevante_e_tem_valores(): void
     {
         $validators = [
-            'coletor'      => [
-                'type'               => 'repeat',
-                'relevant'           => 'false()',
-                'required'           => 'false()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'true()',
+            'coletor' => [
+                'type' => 'repeat',
+                'relevant' => 'false()',
+                'required' => 'false()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'true()',
                 'constraint_message' => 'Erro',
-                'choices'            => null,
+                'choices' => null,
             ],
             'coletor/nome' => [
-                'type'               => 'text',
-                'relevant'           => 'true()',
-                'required'           => 'true()',
-                'required_message'   => 'Campo obrigatorio',
-                'constraint'         => 'true()',
+                'type' => 'text',
+                'relevant' => 'true()',
+                'required' => 'true()',
+                'required_message' => 'Campo obrigatorio',
+                'constraint' => 'true()',
                 'constraint_message' => 'Erro',
-                'choices'            => null,
+                'choices' => null,
             ],
         ];
 

@@ -8,7 +8,7 @@ use Icmbio\ValidateXpathExpression\Xpath;
 
 class ValidateCollectionData
 {
-    private const INVALID_CHOICE_MESSAGE     = 'O Valor (%s) nao e uma das escolhas validas: %s';
+    private const INVALID_CHOICE_MESSAGE = 'O Valor (%s) nao e uma das escolhas validas: %s';
     private const INVALID_EXPRESSION_MESSAGE = 'Erro ao validar a expressao ("%s") [%s]';
 
     public function __construct() {}
@@ -45,7 +45,7 @@ class ValidateCollectionData
         ?array $parentContext,
         ?array $taxons,
     ): array {
-        $errors  = [];
+        $errors = [];
         $context = $this->buildContext($data, $parentContext);
 
         foreach ($data as $fieldKey => $fieldValue) {
@@ -54,7 +54,7 @@ class ValidateCollectionData
             }
 
             $fieldValidator = $validators[$fieldKey];
-            $fieldType      = (string) ($fieldValidator['type'] ?? 'text');
+            $fieldType = (string) ($fieldValidator['type'] ?? 'text');
 
             if ($fieldType === 'calculate' && str_ends_with($fieldKey, 'uuid') && $this->hasValue($fieldValue)) {
                 if (! $this->isValidUuid((string) $fieldValue)) {
@@ -127,9 +127,9 @@ class ValidateCollectionData
         int $index,
         ?array $taxons,
     ): array {
-        $errors                 = [];
+        $errors = [];
         $mustValidateConstraint = true;
-        $relevanceExpression    = (string) ($fieldValidator['relevant'] ?? 'true()');
+        $relevanceExpression = (string) ($fieldValidator['relevant'] ?? 'true()');
 
         try {
             $isRelevant = (bool) Xpath::validate($relevanceExpression, $fieldValue, $context);
@@ -152,7 +152,7 @@ class ValidateCollectionData
             $isRequired = (bool) Xpath::validate($requiredExpression, $fieldValue, $context);
             if ($isRequired && $this->isEmptyRequiredValue($fieldValue)) {
                 $mustValidateConstraint = false;
-                $errors[]               = $this->buildError(
+                $errors[] = $this->buildError(
                     $index,
                     $fieldKey,
                     $fieldValue,
@@ -220,7 +220,7 @@ class ValidateCollectionData
         array $context,
         ?array $taxons,
     ): array {
-        $errors              = [];
+        $errors = [];
         $relevanceExpression = (string) ($fieldValidator['relevant'] ?? 'true()');
 
         try {
@@ -306,7 +306,7 @@ class ValidateCollectionData
      */
     protected function validateChoices(string $fieldKey, mixed $fieldValue, array $fieldValidator, int $index): array
     {
-        $errors  = [];
+        $errors = [];
         $choices = $fieldValidator['choices'] ?? null;
         if (! is_array($choices)) {
             return $errors;
@@ -322,7 +322,7 @@ class ValidateCollectionData
         }
 
         $choiceListAsString = implode(', ', array_map('strval', $choices));
-        $fieldType          = (string) ($fieldValidator['type'] ?? 'text');
+        $fieldType = (string) ($fieldValidator['type'] ?? 'text');
 
         if ($fieldType === 'select one') {
             if ($this->hasValue($fieldValue) && ! in_array((string) $fieldValue, array_map('strval', $choices), true)) {
@@ -338,7 +338,7 @@ class ValidateCollectionData
         }
 
         if ($fieldType === 'select all that apply') {
-            $values        = explode(' ', (string) $fieldValue);
+            $values = explode(' ', (string) $fieldValue);
             $stringChoices = array_map('strval', $choices);
             foreach ($values as $singleValue) {
                 if ($singleValue !== '' && ! in_array($singleValue, $stringChoices, true)) {
@@ -361,9 +361,9 @@ class ValidateCollectionData
     protected function buildError(int $index, string $fieldKey, mixed $fieldValue, string $message): array
     {
         return [
-            'index'   => $index,
-            'key'     => $fieldKey,
-            'value'   => $fieldValue,
+            'index' => $index,
+            'key' => $fieldKey,
+            'value' => $fieldValue,
             'message' => $message,
         ];
     }

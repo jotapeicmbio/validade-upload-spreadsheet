@@ -57,7 +57,7 @@ final class CalculateFieldsTest extends TestCase
         ];
 
         $existingUuid = 'f8f7dd3d-53f5-4eb0-becf-1f18e4dc31e4';
-        $data         = [
+        $data = [
             'coletor' => [
                 [
                     'coletor/nome' => 'Ana',

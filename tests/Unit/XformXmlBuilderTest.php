@@ -14,18 +14,18 @@ final class XformXmlBuilderTest extends TestCase
     public function test_build_generates_xform_xml_with_defaults_and_meta(): void
     {
         $data = [
-            'uc'           => 'Unidade 1',
+            'uc' => 'Unidade 1',
             '_attachments' => [
                 ['name' => 'nao deve aparecer'],
             ],
-            'coletor'      => [
+            'coletor' => [
                 ['coletor/cpf' => '11111111111', 'coletor/nome' => 'Ana'],
                 ['coletor/cpf' => '22222222222', 'coletor/nome' => 'Bruno'],
             ],
         ];
 
         $keys = ['uc', 'coletor'];
-        $xml  = XformXmlBuilder::build(
+        $xml = XformXmlBuilder::build(
             $data,
             $keys,
             'xml',
@@ -64,7 +64,7 @@ final class XformXmlBuilderTest extends TestCase
     {
         $data = ['uc' => 'Unidade 1'];
         $keys = ['uc'];
-        $xml  = XformXmlBuilder::build(
+        $xml = XformXmlBuilder::build(
             $data,
             $keys,
             'xml',
