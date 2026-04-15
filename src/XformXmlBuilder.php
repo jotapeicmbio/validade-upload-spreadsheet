@@ -142,12 +142,14 @@ class XformXmlBuilder
             foreach ($row as $key => $value) {
                 if (str_starts_with((string) $key, '_')) {
                     unset($newRow[$key]);
+
                     continue;
                 }
                 $newKey = $this->lastSegment((string) $key);
                 if (is_array($value) && array_is_list($value)) {
                     unset($newRow[$key]);
                     $newRow[$newKey] = $this->prepareDataToXml($value);
+
                     continue;
                 }
                 unset($newRow[$key]);
@@ -209,6 +211,7 @@ class XformXmlBuilder
                         $this->appendDataToXml($document, $childElement, $listItem);
                     }
                 }
+
                 continue;
             }
 
@@ -235,6 +238,7 @@ class XformXmlBuilder
     protected function lastSegment(string $fieldPath): string
     {
         $segments = explode('/', $fieldPath);
+
         return (string) end($segments);
     }
 }

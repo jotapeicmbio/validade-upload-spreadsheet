@@ -110,6 +110,7 @@ class CalculateFields
                     $value[$rowIndex] = $rowData;
                 }
                 $data[$key] = $value;
+
                 break;
             }
 
@@ -148,6 +149,7 @@ class CalculateFields
     protected function lastSegment(string $fieldPath): string
     {
         $segments = explode('/', $fieldPath);
+
         return (string) end($segments);
     }
 }

@@ -71,6 +71,7 @@ class ValidateCollectionData
                     $errors,
                     $this->validateRepeatGroup($fieldKey, $fieldValue, $fieldValidator, $validators, $index, $context, $taxons),
                 );
+
                 continue;
             }
 
@@ -281,6 +282,7 @@ class ValidateCollectionData
         $taxonValueAsString = (string) $fieldValue;
         if (! ctype_digit($taxonValueAsString)) {
             $errors[] = $this->buildError($index, $fieldKey, $fieldValue, 'O valor taxon_lista deve ser um numero.');
+
             return $errors;
         }
 
@@ -331,6 +333,7 @@ class ValidateCollectionData
                     sprintf(self::INVALID_CHOICE_MESSAGE, (string) $fieldValue, $choiceListAsString),
                 );
             }
+
             return $errors;
         }
 
@@ -410,6 +413,7 @@ class ValidateCollectionData
     protected function lastSegment(string $fieldKey): string
     {
         $segments = explode('/', $fieldKey);
+
         return (string) end($segments);
     }
 

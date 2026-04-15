@@ -69,6 +69,7 @@ class PhotoAttachments
                         $indexPath . '-' . $itemIndex,
                     );
                 }
+
                 continue;
             }
 

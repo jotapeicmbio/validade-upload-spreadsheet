@@ -27,6 +27,9 @@
     ],
     "minimum-stability": "dev",
     "config": {
+        "platform": {
+            "php": "8.2.29"
+        },
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
@@ -43,11 +46,14 @@
         "ramsey/uuid": "5.x-dev"
     },
         "scripts": {
-        "test": "vendor/bin/phpunit --testdox",
+        "test": "vendor/bin/phpunit --colors=always --testdox",
         "stan": "vendor/bin/phpstan analyse --memory-limit=1G --no-progress --debug",
+        "style-check": "vendor/bin/php-cs-fixer check",
+        "style-fix": "vendor/bin/php-cs-fixer fix --allow-risky=yes --diff --dry-run",
         "check": [
             "@stan",
-            "@test"
+            "@test",
+            "@style-fix"
         ]
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\ValidateRegister\Validator;
 
 use Icmbio\ValidateRegister\Validator\StructureSpreadsheetData;

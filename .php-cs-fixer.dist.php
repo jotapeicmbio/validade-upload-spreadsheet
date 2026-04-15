@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types=1);
+declare (strict_types = 1);
 
 use PhpCsFixer\Config;
 use PhpCsFixer\Finder;
@@ -8,13 +8,21 @@ use PhpCsFixer\Finder;
 return (new Config())
     ->setRiskyAllowed(true)
     ->setRules([
-        '@auto' => true,
-        '@auto:risky' => true
+        '@auto'                        => true,
+        '@auto:risky'                  => true,
+        'no_unused_imports'            => true,
+        '@PSR12'                       => true,
+        'array_syntax'                 => ['syntax' => 'short'],
+        'blank_line_before_statement'  => ['statements' => ['return', 'throw', 'continue', 'break', 'yield', 'yield_from']],
+        'ordered_imports'              => ['sort_algorithm' => 'alpha'],
+        'line_ending'                  => true,
+        'concat_space'                 => ['spacing' => 'one'],
+        'blank_line_after_opening_tag' => true,
     ])
     // 💡 by default, Fixer looks for `*.php` files excluding `./vendor/` - here, you can groom this config
     ->setFinder(
         (new Finder())
-            // 💡 root folder to check
+        // 💡 root folder to check
             ->in(__DIR__)
             // 💡 additional files, eg bin entry file
             // ->append([__DIR__.'/bin-entry-file'])
