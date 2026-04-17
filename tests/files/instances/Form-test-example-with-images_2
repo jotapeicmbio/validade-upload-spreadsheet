@@ -1,0 +1,21 @@
+<Form-test-example-with-images id="Form-test-example-with-images" version="2026041601"
+    xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:h="http://www.w3.org/1999/xhtml"
+    xmlns:jr="http://openrosa.org/javarosa" xmlns:odk="http://www.opendatakit.org/xforms"
+    xmlns:orx="http://openrosa.org/xforms" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <uc>456</uc>
+    <estacao_amostral>1002</estacao_amostral>
+    <unidade_amostral>2002</unidade_amostral>
+    <tipo>flona</tipo>
+    <check_point>18</check_point>
+    <img_one />
+    <img_two />
+    <meta>
+        <instanceID></instanceID>
+    </meta>
+    <starttime>2026-04-10T18:01:45.000-03:00</starttime>
+    <endtime>2026-04-10T18:01:45.000-03:00</endtime>
+    <deviceid>monitora.sisicmbio.icmbio.gov.br</deviceid>
+    <simid>simserial not found</simid>
+    <subscriberid>subscriberid not found</subscriberid>
+    <devicephonenum>phonenumber not found</devicephonenum>
+</Form-test-example-with-images>
