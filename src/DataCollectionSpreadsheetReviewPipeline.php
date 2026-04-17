@@ -171,7 +171,82 @@ class DataCollectionSpreadsheetReviewPipeline
 
         $this->errors = [];
         $this->data_collection = $this->resolveDynamicChoices($this->data_collection);
+        $this->data_collection = $this->castCollectionValues($this->data_collection);
         $this->data_collection_prepared = true;
+    }
+
+    protected function castCollectionValues(array $collections): array
+    {
+        foreach ($collections as $index => $collection) {
+            if (! is_array($collection)) {
+                continue;
+            }
+
+            $collections[$index] = $this->castNodeValues($collection);
+        }
+
+        return $collections;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @return array<string, mixed>
+     */
+    protected function castNodeValues(array $node): array
+    {
+        foreach ($node as $fieldName => $fieldValue) {
+            $fieldType = (string) ($this->validators[$fieldName]['type'] ?? '');
+
+            if ($fieldType === 'repeat' && is_array($fieldValue) && array_is_list($fieldValue)) {
+                foreach ($fieldValue as $childIndex => $childNode) {
+                    if (! is_array($childNode)) {
+                        continue;
+                    }
+
+                    $fieldValue[$childIndex] = $this->castNodeValues($childNode);
+                }
+
+                $node[$fieldName] = $fieldValue;
+                continue;
+            }
+
+            $node[$fieldName] = $this->castValueByType($fieldType, $fieldValue);
+        }
+
+        return $node;
+    }
+
+    protected function castValueByType(string $fieldType, mixed $fieldValue): mixed
+    {
+        if ($fieldType !== 'integer') {
+            return $fieldValue;
+        }
+
+        if (is_string($fieldValue)) {
+            $trimmedValue = trim($fieldValue);
+
+            if ($trimmedValue !== '' && preg_match('/^-?\d+$/', $trimmedValue) === 1) {
+                return (int) $trimmedValue;
+            }
+        }
+
+        if (! is_array($fieldValue) || ! array_is_list($fieldValue)) {
+            return $fieldValue;
+        }
+
+        foreach ($fieldValue as $index => $item) {
+            if (! is_string($item)) {
+                continue;
+            }
+
+            $trimmedItem = trim($item);
+
+            if ($trimmedItem !== '' && preg_match('/^-?\d+$/', $trimmedItem) === 1) {
+                $fieldValue[$index] = (int) $trimmedItem;
+            }
+        }
+
+        return $fieldValue;
     }
 
     protected function resolveDynamicChoices(array $collections): array
