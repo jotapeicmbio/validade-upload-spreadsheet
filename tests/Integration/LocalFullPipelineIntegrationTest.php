@@ -17,9 +17,10 @@ final class LocalFullPipelineIntegrationTest extends TestCase
     {
         $spreadsheetPath = $this->findSingleFile($this->localPath('planilhas'), ['xlsx', 'xls', 'csv']);
         $jsonPath = $this->findSingleFile($this->localPath('jsons'), ['json']);
+        $databasePath = $this->findSingleFile($this->localPath('database'), ['php']);
         $expectedInstancePaths = $this->findAllFiles($this->localPath('instances'));
 
-        if ($spreadsheetPath === null || $jsonPath === null || $expectedInstancePaths === []) {
+        if ($spreadsheetPath === null || $jsonPath === null || $databasePath === null || $expectedInstancePaths === []) {
             self::markTestSkipped('Local fixtures are not available in tests/local.');
         }
 
@@ -29,13 +30,15 @@ final class LocalFullPipelineIntegrationTest extends TestCase
             512,
             JSON_THROW_ON_ERROR,
         );
+        /** @var array<string, list<array<string, mixed>>> $dynamicChoices */
+        $dynamicChoices = require $databasePath;
 
         $reviewPipeline = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($spreadsheetPath)
-            ->validateCollectionFromJson($formDefinition, $this->dynamicChoices())
+            ->validateCollectionFromJson($formDefinition, $dynamicChoices)
             ->validateCollection();
 
-        self::assertTrue($reviewPipeline->valid(), json_encode($reviewPipeline->errors(), JSON_THROW_ON_ERROR));
+        self::assertTrue($reviewPipeline->valid(), $this->formatErrors($reviewPipeline->errors()));
 
         $outputDirectory = sprintf('%s/validade-upload-spreadsheet-%s', sys_get_temp_dir(), uniqid('', true));
 
@@ -136,6 +139,48 @@ final class LocalFullPipelineIntegrationTest extends TestCase
         return (string) $document->C14N();
     }
 
+    /**
+     * @param list<array<string, mixed>> $errors
+     */
+    private function formatErrors(array $errors): string
+    {
+        if ($errors === []) {
+            return 'No validation errors.';
+        }
+
+        $lines = ["Validation errors:"];
+
+        foreach ($errors as $error) {
+            $index = $error['index'] ?? '?';
+            $key = (string) ($error['key'] ?? '?');
+            $value = $this->stringifyErrorValue($error['value'] ?? null);
+            $message = (string) ($error['message'] ?? 'Unknown error');
+
+            $lines[] = sprintf(
+                '[index=%s] key=%s value=%s message=%s',
+                (string) $index,
+                $key,
+                $value,
+                $message,
+            );
+        }
+
+        return implode(PHP_EOL, $lines);
+    }
+
+    private function stringifyErrorValue(mixed $value): string
+    {
+        if ($value === null) {
+            return 'null';
+        }
+
+        if (is_scalar($value)) {
+            return var_export($value, true);
+        }
+
+        return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
     private function removeDirectory(string $directory): void
     {
         if (! is_dir($directory)) {
@@ -160,26 +205,5 @@ final class LocalFullPipelineIntegrationTest extends TestCase
         }
 
         rmdir($directory);
-    }
-
-    private function dynamicChoices(): array
-    {
-        return [
-            'uc' => [
-                ['label' => 'Estação Ecológica da Terra do Meio', 'name' => 123],
-                ['label' => 'Floresta Nacional de Brasília', 'name' => 456],
-                ['label' => 'Reserva Extrativista do Tapajós', 'name' => 789],
-            ],
-            'estacao_amostral' => [
-                ['label' => 'EA-001 Teste', 'name' => 1001],
-                ['label' => 'EA-002 Teste', 'name' => 1002],
-                ['label' => 'EA-003 Teste', 'name' => 1003],
-            ],
-            'unidade_amostral' => [
-                ['label' => 'UA-001 Teste', 'name' => 2001],
-                ['label' => 'UA-002 Teste', 'name' => 2002],
-                ['label' => 'UA-003 Teste', 'name' => 2003],
-            ],
-        ];
     }
 }
