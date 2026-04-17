@@ -73,7 +73,7 @@ class StructureSpreadsheetDataTest extends TestCase
             [
                 'header_1' => 'OtherInfo 1',
                 'header_2' => [
-                    ['header_2/sub_header_2' => 'OtherInfo 2'],
+                    'sub_header_2' => 'OtherInfo 2',
                 ],
                 'header_3' => 'OtherInfo 3',
                 'header_4' => 'OtherInfo 4',
