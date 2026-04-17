@@ -56,14 +56,7 @@ class StructureSpreadsheetData
 
         foreach ($rows as $row) {
             $row = array_pad($row, $numCols, null);
-            $isModel = true;
-
-            foreach ($row as $cell) {
-                if ($this->isEmptyCell($cell)) {
-                    $isModel = false;
-                    break;
-                }
-            }
+            $isModel = $this->isModelRow($row);
 
             if ($isModel) {
                 if ($currentModel !== null) {
@@ -84,6 +77,20 @@ class StructureSpreadsheetData
         if ($currentModel !== null) {
             yield $currentModel;
         }
+    }
+
+    /** @param array<int, mixed> $row */
+    protected function isModelRow(array $row): bool
+    {
+        foreach ($row as $index => $cell) {
+            if ($this->isEmptyCell($cell)) {
+                continue;
+            }
+
+            return $index === 0;
+        }
+
+        return false;
     }
 
     /** @return Generator<int, array<string, mixed>> */
