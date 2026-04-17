@@ -14,6 +14,7 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $validators = [];
     protected array $errors = [];
     protected array $dynamic_choices = [];
+    protected array $form_definition = [];
     protected bool $data_collection_prepared = false;
 
     public function setDataCollection(string $path): self
@@ -78,10 +79,11 @@ class DataCollectionSpreadsheetReviewPipeline
         return $this;
     }
 
-    public function validateCollectionFromJson(array $validators = [], array $dynamicChoices = []): self
+    public function validateCollectionFromJson(array $formDefinition = [], array $dynamicChoices = []): self
     {
+        $this->form_definition = $formDefinition;
         $this->dynamic_choices = $dynamicChoices;
-        $this->validators = CreateValidatorsStructure::build($validators, $dynamicChoices);
+        $this->validators = CreateValidatorsStructure::build($formDefinition['children'] ?? [], $dynamicChoices);
 
         return $this;
     }
@@ -94,6 +96,11 @@ class DataCollectionSpreadsheetReviewPipeline
     public function errors(): array
     {
         return $this->errors;
+    }
+
+    public function formDefinition(): array
+    {
+        return $this->form_definition;
     }
 
     protected function resolveSelectedIndices(DataCollectionSelectorKey $selectorKey, array $keys): array

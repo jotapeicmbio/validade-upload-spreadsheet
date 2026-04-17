@@ -12,6 +12,8 @@ class DataCollectionSpreadsheetConvertPipeline
     protected array $collection = [];
 
     protected string $outputDirectory;
+    protected array $formDefinition = [];
+    protected bool $hasManualFormInfo = false;
     protected ?string $instanceName = null;
     protected string $instanceVersion = '1';
     protected ?string $timestamp = null;
@@ -21,10 +23,34 @@ class DataCollectionSpreadsheetConvertPipeline
         $this->outputDirectory = getcwd() . '/xmls';
     }
 
-    /** @param list<array<string, mixed>> $collection */
-    public function collection(array $collection): self
+    /** @param list<array<string, mixed>>|DataCollectionSpreadsheetReviewPipeline $collection */
+    public function collection(array|DataCollectionSpreadsheetReviewPipeline $collection): self
     {
+        if ($collection instanceof DataCollectionSpreadsheetReviewPipeline) {
+            if (! $collection->valid()) {
+                throw new RuntimeException('The review pipeline contains validation errors.');
+            }
+
+            if (! $this->hasManualFormInfo) {
+                $this->formDefinition = $collection->formDefinition();
+            }
+
+            /** @var list<array<string, mixed>> $structuredCollection */
+            $structuredCollection = $collection->process();
+            $this->collection = $structuredCollection;
+
+            return $this;
+        }
+
         $this->collection = $collection;
+
+        return $this;
+    }
+
+    public function formInfo(array $formDefinition): self
+    {
+        $this->formDefinition = $formDefinition;
+        $this->hasManualFormInfo = true;
 
         return $this;
     }
@@ -60,13 +86,13 @@ class DataCollectionSpreadsheetConvertPipeline
 
         foreach ($this->collection as $index => $item) {
             $preparedItem = $this->prepareItem($item);
-            $instanceName = $this->resolveInstanceName();
+            ['name' => $instanceName, 'version' => $instanceVersion] = $this->resolvedInstanceInfo();
             $xml = XformXmlBuilder::build(
                 $preparedItem,
                 $this->extractKeysFromItem($preparedItem),
                 $instanceName,
                 $instanceName,
-                $this->instanceVersion,
+                $instanceVersion,
                 null,
                 $this->resolveTimestamp(),
             );
@@ -116,11 +142,43 @@ class DataCollectionSpreadsheetConvertPipeline
 
     protected function resolveInstanceName(): string
     {
-        if ($this->instanceName === null || trim($this->instanceName) === '') {
+        if ($this->instanceName !== null && trim($this->instanceName) !== '') {
+            return $this->instanceName;
+        }
+
+        $nameFromForm = $this->formDefinition['id_string'] ?? $this->formDefinition['name'] ?? null;
+
+        if (! is_string($nameFromForm) || trim($nameFromForm) === '') {
             throw new RuntimeException('Instance name was not provided.');
         }
 
-        return $this->instanceName;
+        return $nameFromForm;
+    }
+
+    protected function resolveInstanceVersion(): string
+    {
+        if ($this->instanceVersion !== '1' || $this->instanceName !== null) {
+            return $this->instanceVersion;
+        }
+
+        $versionFromForm = $this->formDefinition['version'] ?? null;
+
+        if (! is_string($versionFromForm) && ! is_int($versionFromForm)) {
+            return '1';
+        }
+
+        return (string) $versionFromForm;
+    }
+
+    /**
+     * @return array{name: string, version: string}
+     */
+    protected function resolvedInstanceInfo(): array
+    {
+        return [
+            'name' => $this->resolveInstanceName(),
+            'version' => $this->resolveInstanceVersion(),
+        ];
     }
 
     protected function resolveTimestamp(): string

@@ -50,7 +50,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
 
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -95,7 +95,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => mb_strtoupper($item), DataCollectionSelectorKey::INDICE, [0])
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -140,7 +140,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => trim(mb_strtoupper($item)), keys: ['estacao_amostral'])
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -151,13 +151,13 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => trim(mb_strtoupper($item)), DataCollectionSelectorKey::NAME, [])
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -168,13 +168,13 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => trim(mb_strtoupper($item)))
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -218,7 +218,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
 
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -229,7 +229,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'])
+            ->validateCollectionFromJson($this->formExampleImagesJson())
             ->validateCollection();
 
         $this->assertTrue($expected->valid());
@@ -241,7 +241,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path_error)
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'])
+            ->validateCollectionFromJson($this->formExampleImagesJson())
             ->validateCollection();
 
         $this->assertFalse($expected->valid());
@@ -255,7 +255,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
-            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoicesWithMissingUc())
+            ->validateCollectionFromJson($this->formExampleImagesJson(), $this->dynamicChoicesWithMissingUc())
             ->validateCollection();
 
         $this->assertFalse($expected->valid());
