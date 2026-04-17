@@ -67,9 +67,9 @@ class StructureSpreadsheetDataTest extends TestCase
                     ['header_5/sub_header_5' => 'Info 51'],
                     ['header_5/sub_header_5' => 'Info 52'],
                     ['header_5/sub_header_5' => 'Info 55'],
-                ]
+                ],
             ],
-            
+
             [
                 'header_1' => 'OtherInfo 1',
                 'header_2' => [
@@ -81,7 +81,7 @@ class StructureSpreadsheetDataTest extends TestCase
                     ['header_5/sub_header_5' => 'OtherInfo 51'],
                     ['header_5/sub_header_5' => 'OtherInfo 52'],
                     ['header_5/sub_header_5' => 'OtherInfo 53'],
-                ]
+                ],
             ],
         ];
 
@@ -112,13 +112,13 @@ class StructureSpreadsheetDataTest extends TestCase
                 'coletor' => [
                     [
                         'coletor/nome' => 'Joao',
-                        'coletor/cpf' => '01234567890'
+                        'coletor/cpf' => '01234567890',
                     ],
                     [
                         'coletor/nome' => 'Maria',
-                        'coletor/cpf' => '11234567891'
-                    ]
-                ]
+                        'coletor/cpf' => '11234567891',
+                    ],
+                ],
             ],
             [
                 'uc' => 'Floresta Nacional de Brasília',
@@ -127,13 +127,13 @@ class StructureSpreadsheetDataTest extends TestCase
                 'coletor' => [
                     [
                         'coletor/nome' => 'Marcio',
-                        'coletor/cpf' => '31234567893'
+                        'coletor/cpf' => '31234567893',
                     ],
                     [
                         'coletor/nome' => 'Thiago',
-                        'coletor/cpf' => '41234567894'
-                    ]
-                ]
+                        'coletor/cpf' => '41234567894',
+                    ],
+                ],
             ],
         ];
 
