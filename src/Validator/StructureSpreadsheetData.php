@@ -4,33 +4,38 @@ declare(strict_types=1);
 
 namespace Icmbio\ValidateRegister\Validator;
 
+use Generator;
+
 class StructureSpreadsheetData
 {
     /** @var array<int, array<int, mixed>> */
     protected array $worksheet = [];
     /** @var array<int, string> */
     protected array $headers = [];
-    /** @var array<int, string> */
-    protected array $labels = [];
+    protected bool $shouldStructure = false;
 
     /** @param array<int, array<int, mixed>> $worksheet */
     public function __construct(array $worksheet)
     {
-        $this->worksheet = $worksheet;
-        $this->setHeaders();
-        $this->setLabels();
-    }
-
-    private function setHeaders(): void
-    {
+        $this->worksheet = array_values($worksheet);
         $this->headers = $this->worksheet[0] ?? [];
-        unset($this->worksheet[0]);
     }
 
-    private function setLabels(): void
+    public function estruture(): self
     {
-        $this->labels = $this->worksheet[1] ?? [];
-        unset($this->worksheet[1]);
+        $this->shouldStructure = true;
+
+        return $this;
+    }
+
+    /** @return array<int, mixed> */
+    public function toArray(): array
+    {
+        if ($this->shouldStructure) {
+            return iterator_to_array($this->structuredCollections(), false);
+        }
+
+        return $this->output();
     }
 
     /** @return array<int, array<int, mixed>> */
@@ -38,57 +43,55 @@ class StructureSpreadsheetData
     {
         return [
             $this->headers,
-            $this->labels,
-            ...$this->validadeRow(),
+            ...iterator_to_array($this->normalizedRows(), false),
         ];
     }
 
-    /** @return array<int, array<int, mixed>> */
-    protected function validadeRow(): array
+    /** @return Generator<int, array<int, mixed>> */
+    protected function normalizedRows(): Generator
     {
-        // reindex para garantir percorremos em ordem correta
-        $rows = array_values($this->worksheet);
-        $result = [];
+        $rows = array_slice($this->worksheet, 2);
         $currentModel = null;
-        $numCols = count($this->headers) ?: 0;
+        $numCols = count($this->headers);
 
         foreach ($rows as $row) {
-            // pad para garantir colunas consistentes
             $row = array_pad($row, $numCols, null);
-
             $isModel = true;
-            foreach ($row as $cell) {
-                if ($this->validateCell($cell)) {
-                    $isModel = false;
 
+            foreach ($row as $cell) {
+                if ($this->isEmptyCell($cell)) {
+                    $isModel = false;
                     break;
                 }
             }
 
             if ($isModel) {
-                // quando encontramos um novo modelo, salvamos o anterior (se existir)
                 if ($currentModel !== null) {
-                    $result[] = $currentModel;
+                    yield $currentModel;
                 }
+
                 $currentModel = $row;
-
                 continue;
             }
 
-            // linha com células vazias -> faz merge com o model atual
             if ($currentModel === null) {
-                // proteção: se não tivermos model ainda, ignoramos a linha
                 continue;
             }
-            $currentModel = $this->validateColumn($currentModel, $row);
+
+            $currentModel = $this->mergeRow($currentModel, $row);
         }
 
-        // adiciona o último model
         if ($currentModel !== null) {
-            $result[] = $currentModel;
+            yield $currentModel;
         }
+    }
 
-        return $result;
+    /** @return Generator<int, array<string, mixed>> */
+    protected function structuredCollections(): Generator
+    {
+        foreach ($this->normalizedRows() as $row) {
+            yield $this->structureRow($row);
+        }
     }
 
     /**
@@ -96,46 +99,116 @@ class StructureSpreadsheetData
      * @param array<int, mixed> $currentRow
      * @return array<int, mixed>
      */
-    protected function validateColumn(array $modelRow, array $currentRow): array
+    protected function mergeRow(array $modelRow, array $currentRow): array
     {
         $numCols = count($this->headers);
-
-        // garantir mesmo comprimento
         $currentRow = array_pad($currentRow, $numCols, null);
+
         for ($i = 0; $i < $numCols; $i++) {
             $cell = $currentRow[$i];
 
-            // se célula atual está "vazia" (null, "", " ") -> nada a fazer
-            if ($this->validateCell($cell)) {
+            if ($this->isEmptyCell($cell)) {
                 continue;
             }
 
-            // se no model já há um valor
-            if (array_key_exists($i, $modelRow) && ! $this->validateCell($modelRow[$i])) {
+            if (array_key_exists($i, $modelRow) && ! $this->isEmptyCell($modelRow[$i])) {
                 if (is_array($modelRow[$i])) {
-                    // já é array -> append
                     $modelRow[$i][] = $cell;
                 } else {
-                    // convertido de scalar para array com os dois valores
                     $modelRow[$i] = [$modelRow[$i], $cell];
                 }
-            } else {
-                // model não tinha valor nessa coluna -> atribui diretamente
-                $modelRow[$i] = $cell;
+
+                continue;
             }
+
+            $modelRow[$i] = $cell;
         }
 
         return $modelRow;
     }
 
-    protected function validateCell(mixed $cell): bool
+    protected function isEmptyCell(mixed $cell): bool
     {
-        // considera vazio: null ou string composta só por espaços ("" / " " / "\t" etc)
-        if (is_null($cell)) {
+        if ($cell === null) {
             return true;
         }
-        if (is_string($cell) && trim($cell) === '') {
-            return true;
+
+        return is_string($cell) && trim($cell) === '';
+    }
+
+    /**
+     * @param array<int, mixed> $row
+     * @return array<string, mixed>
+     */
+    protected function structureRow(array $row): array
+    {
+        $row = array_pad($row, count($this->headers), null);
+        $structured = [];
+        $groupedColumns = [];
+
+        foreach ($this->headers as $index => $header) {
+            $cell = $row[$index] ?? null;
+
+            if (! str_contains($header, '/')) {
+                $structured[$header] = $cell;
+                continue;
+            }
+
+            [$groupKey] = explode('/', $header, 2);
+            $groupedColumns[$groupKey][] = [
+                'header' => $header,
+                'value' => $cell,
+            ];
+        }
+
+        foreach ($groupedColumns as $groupKey => $columns) {
+            $structured[$groupKey] = $this->buildGroupedItems($columns);
+        }
+
+        return $structured;
+    }
+
+    /**
+     * @param array<int, array{header: string, value: mixed}> $columns
+     * @return array<int, array<string, mixed>>
+     */
+    protected function buildGroupedItems(array $columns): array
+    {
+        $itemCount = 1;
+
+        foreach ($columns as $column) {
+            if (is_array($column['value'])) {
+                $itemCount = max($itemCount, count($column['value']));
+            }
+        }
+
+        $items = [];
+
+        for ($index = 0; $index < $itemCount; $index++) {
+            $item = [];
+
+            foreach ($columns as $column) {
+                $value = $column['value'];
+                $item[$column['header']] = is_array($value)
+                    ? ($value[$index] ?? null)
+                    : $value;
+            }
+
+            if ($this->itemHasValue($item)) {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
+    }
+
+    /** @param array<string, mixed> $item */
+    protected function itemHasValue(array $item): bool
+    {
+        foreach ($item as $value) {
+            if (! $this->isEmptyCell($value)) {
+                return true;
+            }
         }
 
         return false;
