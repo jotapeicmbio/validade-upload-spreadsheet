@@ -62,11 +62,11 @@ class ValidateCollectionData
                 }
             }
 
-            if ($fieldType === 'integer' && $this->hasValue($fieldValue) && ! is_int($fieldValue)) {
+            if ($fieldType === 'integer' && $this->hasValue($fieldValue) && ! $this->isValidIntegerValue($fieldValue)) {
                 $errors[] = $this->buildError($index, $fieldKey, $fieldValue, 'E esperado um valor inteiro.');
             }
 
-            if ($this->isRepeatGroupValue($fieldValue)) {
+            if ($fieldType === 'repeat' && $this->isRepeatGroupValue($fieldValue)) {
                 $errors = array_merge(
                     $errors,
                     $this->validateRepeatGroup($fieldKey, $fieldValue, $fieldValidator, $validators, $index, $context, $taxons),
@@ -82,6 +82,25 @@ class ValidateCollectionData
         }
 
         return $errors;
+    }
+
+    protected function isValidIntegerValue(mixed $fieldValue): bool
+    {
+        if (is_int($fieldValue)) {
+            return true;
+        }
+
+        if (! is_array($fieldValue) || ! array_is_list($fieldValue)) {
+            return false;
+        }
+
+        foreach ($fieldValue as $value) {
+            if (! is_int($value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
