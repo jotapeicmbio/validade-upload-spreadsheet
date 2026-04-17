@@ -169,10 +169,23 @@ class StructureSpreadsheetData
         }
 
         foreach ($groupedColumns as $groupKey => $columns) {
-            $structured[$groupKey] = $this->buildGroupedItems($columns);
+            $structured[$groupKey] = $this->buildGroupedValue($columns);
         }
 
         return $structured;
+    }
+
+    /**
+     * @param array<int, array{header: string, value: mixed}> $columns
+     * @return array<string, mixed>|array<int, array<string, mixed>>
+     */
+    protected function buildGroupedValue(array $columns): array
+    {
+        if (! $this->groupHasRepeatedItems($columns)) {
+            return $this->buildSingleGroupItem($columns);
+        }
+
+        return $this->buildGroupedItems($columns);
     }
 
     /**
@@ -209,6 +222,33 @@ class StructureSpreadsheetData
         return $items;
     }
 
+    /**
+     * @param array<int, array{header: string, value: mixed}> $columns
+     * @return array<string, mixed>
+     */
+    protected function buildSingleGroupItem(array $columns): array
+    {
+        $item = [];
+
+        foreach ($columns as $column) {
+            $item[$this->lastSegment($column['header'])] = $column['value'];
+        }
+
+        return $item;
+    }
+
+    /** @param array<int, array{header: string, value: mixed}> $columns */
+    protected function groupHasRepeatedItems(array $columns): bool
+    {
+        foreach ($columns as $column) {
+            if (is_array($column['value'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @param array<string, mixed> $item */
     protected function itemHasValue(array $item): bool
     {
@@ -219,5 +259,12 @@ class StructureSpreadsheetData
         }
 
         return false;
+    }
+
+    protected function lastSegment(string $fieldPath): string
+    {
+        $segments = explode('/', $fieldPath);
+
+        return (string) end($segments);
     }
 }
