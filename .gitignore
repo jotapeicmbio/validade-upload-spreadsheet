@@ -5,3 +5,9 @@
 /composer.lock
 .php-cs-fixer.cache
 /xmls
+/tests/local/planilhas/*
+/tests/local/instances/*
+/tests/local/jsons/*
+!/tests/local/planilhas/.gitkeep
+!/tests/local/instances/.gitkeep
+!/tests/local/jsons/.gitkeep
