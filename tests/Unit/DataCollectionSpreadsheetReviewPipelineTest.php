@@ -24,7 +24,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'uc' => 456,
@@ -34,7 +34,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'uc' => 789,
@@ -44,7 +44,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
         ];
 
@@ -68,7 +68,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'UC' => 'FLORESTA NACIONAL DE BRASÍLIA',
@@ -78,7 +78,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'UC' => 'RESERVA EXTRATIVISTA DO TAPAJÓS',
@@ -88,7 +88,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
         ];
 
@@ -113,7 +113,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'uc' => 456,
@@ -123,7 +123,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'uc' => 789,
@@ -133,7 +133,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
         ];
 
@@ -192,7 +192,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'uc' => 456,
@@ -202,7 +202,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
             [
                 'uc' => 789,
@@ -212,7 +212,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'check_point' => 18,
                 'img_one' => null,
                 'img_two' => null,
-                'meta' => [],
+                'meta' => ['instanceID' => null],
             ],
         ];
 
