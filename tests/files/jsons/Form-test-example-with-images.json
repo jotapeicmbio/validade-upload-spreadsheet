@@ -1,0 +1,137 @@
+{
+    "children": [
+        {
+            "choices": [
+                {
+                    "label": "label",
+                    "name": "num_key"
+                }
+            ],
+            "label": "Unidade de Conserva\u00e7\u00e3o",
+            "name": "uc",
+            "parameters": [],
+            "type": "select one"
+        },
+        {
+            "choice_filter": "${uc}=uc",
+            "choices": [
+                {
+                    "label": "label",
+                    "name": "num_key"
+                }
+            ],
+            "itemset": "estacao_amostral",
+            "label": "Informe sua UA",
+            "name": "estacao_amostral",
+            "parameters": [],
+            "type": "select one"
+        },
+        {
+            "choice_filter": "${estacao_amostral}=estacao_amostral",
+            "choices": [
+                {
+                    "label": "label",
+                    "name": "num_key"
+                }
+            ],
+            "itemset": "unidade_amostral",
+            "label": "informe sua EA",
+            "name": "unidade_amostral",
+            "parameters": [],
+            "type": "select one"
+        },
+        {
+            "choices": [
+                {
+                    "label": "Esta\u00e7\u00e3o Ecol\u00f3gica",
+                    "name": "esec"
+                },
+                {
+                    "label": "Floresta Nacional",
+                    "name": "flona"
+                },
+                {
+                    "label": "Reserva Extrativista",
+                    "name": "resex"
+                }
+            ],
+            "label": "Qual o tipo da UC?",
+            "name": "tipo",
+            "parameters": [],
+            "type": "select one"
+        },
+        {
+            "label": "ResponQual o checkpoint?dent's age?",
+            "name": "check_point",
+            "type": "integer"
+        },
+        {
+            "label": "Upload an image",
+            "name": "img_one",
+            "type": "photo"
+        },
+        {
+            "label": "Upload an image",
+            "name": "img_two",
+            "type": "photo"
+        },
+        {
+            "children": [
+                {
+                    "bind": {
+                        "calculate": "concat('uuid:', uuid())",
+                        "readonly": "true()"
+                    },
+                    "name": "instanceID",
+                    "type": "calculate"
+                }
+            ],
+            "control": {
+                "bodyless": true
+            },
+            "name": "meta",
+            "type": "group"
+        }
+    ],
+    "choices": {
+        "estacao_amostral": [
+            {
+                "label": "label",
+                "name": "num_key"
+            }
+        ],
+        "tipos": [
+            {
+                "label": "Esta\u00e7\u00e3o Ecol\u00f3gica",
+                "name": "esec"
+            },
+            {
+                "label": "Floresta Nacional",
+                "name": "flona"
+            },
+            {
+                "label": "Reserva Extrativista",
+                "name": "resex"
+            }
+        ],
+        "uc": [
+            {
+                "label": "label",
+                "name": "num_key"
+            }
+        ],
+        "unidade_amostral": [
+            {
+                "label": "label",
+                "name": "num_key"
+            }
+        ]
+    },
+    "default_language": "default",
+    "id_string": "Form-test-example-with-images",
+    "name": "form-example-images",
+    "sms_keyword": "Form-test-example-with-images",
+    "title": "Form Test Example with images",
+    "type": "survey",
+    "version": "2026041601"
+}
