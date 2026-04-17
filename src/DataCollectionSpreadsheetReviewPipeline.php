@@ -13,10 +13,14 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $data_collection = [];
     protected array $validators = [];
     protected array $errors = [];
+    protected array $dynamic_choices = [];
+    protected bool $data_collection_prepared = false;
 
     public function setDataCollection(string $path): self
     {
         $this->data_collection = SpreadsheetReader::load($path);
+        $this->data_collection_prepared = false;
+        $this->errors = [];
         return $this;
     }
 
@@ -41,44 +45,42 @@ class DataCollectionSpreadsheetReviewPipeline
             }
         }
 
+        $this->data_collection_prepared = false;
+
         return $this;
     }
 
     public function process(): array
     {
-        if ($this->shouldStructureDataCollection()) {
-            return (new StructureSpreadsheetData($this->data_collection))
-                ->estruture()
-                ->toArray();
-        }
+        $this->prepareDataCollection();
 
         return $this->data_collection;
     }
 
     public function validateCollection(): self
     {
-        $this->data_collection = (new StructureSpreadsheetData($this->data_collection))
-            ->estruture()
-            ->toArray();
-
-        $this->errors = [];
+        $this->prepareDataCollection();
+        $validationErrors = [];
 
         foreach ($this->data_collection as $index => $collection) {
             if (! is_array($collection)) {
                 continue;
             }
 
-            $this->errors = array_merge(
-                $this->errors,
+            $validationErrors = array_merge(
+                $validationErrors,
                 ValidateCollectionData::createErrorsList($collection, $this->validators, $index),
             );
         }
+
+        $this->errors = array_merge($this->errors, $validationErrors);
 
         return $this;
     }
 
     public function validateCollectionFromJson(array $validators = [], array $dynamicChoices = []): self
     {
+        $this->dynamic_choices = $dynamicChoices;
         $this->validators = CreateValidatorsStructure::build($validators, $dynamicChoices);
 
         return $this;
@@ -146,5 +148,102 @@ class DataCollectionSpreadsheetReviewPipeline
         $firstRow = $this->data_collection[0] ?? null;
 
         return is_array($firstRow) && array_is_list($firstRow);
+    }
+
+    protected function prepareDataCollection(): void
+    {
+        if ($this->data_collection_prepared) {
+            return;
+        }
+
+        if ($this->shouldStructureDataCollection()) {
+            $this->data_collection = (new StructureSpreadsheetData($this->data_collection))
+                ->estruture()
+                ->toArray();
+        }
+
+        $this->errors = [];
+        $this->data_collection = $this->resolveDynamicChoices($this->data_collection);
+        $this->data_collection_prepared = true;
+    }
+
+    protected function resolveDynamicChoices(array $collections): array
+    {
+        if ($this->dynamic_choices === []) {
+            return $collections;
+        }
+
+        foreach ($collections as $index => $collection) {
+            if (! is_array($collection)) {
+                continue;
+            }
+
+            foreach ($this->dynamic_choices as $fieldName => $options) {
+                if (! array_key_exists($fieldName, $collection) || ! is_array($options)) {
+                    continue;
+                }
+
+                $currentValue = $collection[$fieldName];
+
+                if ($this->valueAlreadyResolved($currentValue, $options)) {
+                    continue;
+                }
+
+                $matchedOption = $this->findDynamicChoiceByLabel($currentValue, $options);
+
+                if ($matchedOption === null) {
+                    $this->errors[] = [
+                        'index' => $index,
+                        'key' => $fieldName,
+                        'value' => $currentValue,
+                        'message' => sprintf(
+                            'O valor (%s) nao foi encontrado nas escolhas dinamicas de %s.',
+                            (string) $currentValue,
+                            $fieldName,
+                        ),
+                    ];
+                    continue;
+                }
+
+                $collections[$index][$fieldName] = $matchedOption['name'];
+            }
+        }
+
+        return $collections;
+    }
+
+    /** @param list<array<string, mixed>> $options */
+    protected function valueAlreadyResolved(mixed $currentValue, array $options): bool
+    {
+        foreach ($options as $option) {
+            if (! is_array($option) || ! array_key_exists('name', $option)) {
+                continue;
+            }
+
+            if ($option['name'] === $currentValue) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $options
+     * @return array<string, mixed>|null
+     */
+    protected function findDynamicChoiceByLabel(mixed $currentValue, array $options): ?array
+    {
+        foreach ($options as $option) {
+            if (! is_array($option) || ! array_key_exists('label', $option)) {
+                continue;
+            }
+
+            if ((string) $option['label'] === (string) $currentValue) {
+                return $option;
+            }
+        }
+
+        return null;
     }
 }

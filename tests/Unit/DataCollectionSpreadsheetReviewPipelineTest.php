@@ -17,9 +17,9 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = [
             [
-                'uc' => 'Estação Ecológica da Terra do Meio',
-                'estacao_amostral' => 'EA-001 Teste',
-                'unidade_amostral' => 'UA-001 Teste',
+                'uc' => 123,
+                'estacao_amostral' => 1001,
+                'unidade_amostral' => 2001,
                 'tipo' => 'esec',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -27,9 +27,9 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'meta' => [],
             ],
             [
-                'uc' => 'Floresta Nacional de Brasília',
-                'estacao_amostral' => 'EA-002 Teste',
-                'unidade_amostral' => 'UA-002 Teste',
+                'uc' => 456,
+                'estacao_amostral' => 1002,
+                'unidade_amostral' => 2002,
                 'tipo' => 'flona',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -37,9 +37,9 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'meta' => [],
             ],
             [
-                'uc' => 'Reserva Extrativista do Tapajós',
-                'estacao_amostral' => 'EA-003 Teste',
-                'unidade_amostral' => 'UA-003 Teste',
+                'uc' => 789,
+                'estacao_amostral' => 1003,
+                'unidade_amostral' => 2003,
                 'tipo' => 'resex',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -50,6 +50,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
 
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -61,8 +62,8 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $expected = [
             [
                 'UC' => 'ESTAÇÃO ECOLÓGICA DA TERRA DO MEIO',
-                'estacao_amostral' => 'EA-001 Teste',
-                'unidade_amostral' => 'UA-001 Teste',
+                'estacao_amostral' => 1001,
+                'unidade_amostral' => 2001,
                 'tipo' => 'esec',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -71,8 +72,8 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
             ],
             [
                 'UC' => 'FLORESTA NACIONAL DE BRASÍLIA',
-                'estacao_amostral' => 'EA-002 Teste',
-                'unidade_amostral' => 'UA-002 Teste',
+                'estacao_amostral' => 1002,
+                'unidade_amostral' => 2002,
                 'tipo' => 'flona',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -81,8 +82,8 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
             ],
             [
                 'UC' => 'RESERVA EXTRATIVISTA DO TAPAJÓS',
-                'estacao_amostral' => 'EA-003 Teste',
-                'unidade_amostral' => 'UA-003 Teste',
+                'estacao_amostral' => 1003,
+                'unidade_amostral' => 2003,
                 'tipo' => 'resex',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -94,6 +95,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => mb_strtoupper($item), DataCollectionSelectorKey::INDICE, [0])
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -104,9 +106,9 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = [
             [
-                'uc' => 'Estação Ecológica da Terra do Meio',
+                'uc' => 123,
                 'ESTACAO_AMOSTRAL' => 'EA-001 TESTE',
-                'unidade_amostral' => 'UA-001 Teste',
+                'unidade_amostral' => 2001,
                 'tipo' => 'esec',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -114,9 +116,9 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'meta' => [],
             ],
             [
-                'uc' => 'Floresta Nacional de Brasília',
+                'uc' => 456,
                 'ESTACAO_AMOSTRAL' => 'EA-002 TESTE',
-                'unidade_amostral' => 'UA-002 Teste',
+                'unidade_amostral' => 2002,
                 'tipo' => 'flona',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -124,9 +126,9 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 'meta' => [],
             ],
             [
-                'uc' => 'Reserva Extrativista do Tapajós',
+                'uc' => 789,
                 'ESTACAO_AMOSTRAL' => 'EA-003 TESTE',
-                'unidade_amostral' => 'UA-003 Teste',
+                'unidade_amostral' => 2003,
                 'tipo' => 'resex',
                 'check_point' => [18, 28, 38],
                 'img_one' => null,
@@ -138,6 +140,7 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => trim(mb_strtoupper($item)), keys: ['estacao_amostral'])
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -148,11 +151,13 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
             ->process();
 
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => trim(mb_strtoupper($item)), DataCollectionSelectorKey::NAME, [])
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -163,11 +168,57 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     {
         $expected = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
             ->process();
 
         $result = (new DataCollectionSpreadsheetReviewPipeline())
             ->setDataCollection($this->planilha_path)
             ->transform(fn($item) => trim(mb_strtoupper($item)))
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
+            ->process();
+
+        $this->assertEquals($expected, $result);
+    }
+
+    #[Test]
+    public function pipelineShouldResolveDynamicChoicesToIdsWhenProcessingCollection(): void
+    {
+        $expected = [
+            [
+                'uc' => 123,
+                'estacao_amostral' => 1001,
+                'unidade_amostral' => 2001,
+                'tipo' => 'esec',
+                'check_point' => [18, 28, 38],
+                'img_one' => null,
+                'img_two' => null,
+                'meta' => [],
+            ],
+            [
+                'uc' => 456,
+                'estacao_amostral' => 1002,
+                'unidade_amostral' => 2002,
+                'tipo' => 'flona',
+                'check_point' => [18, 28, 38],
+                'img_one' => null,
+                'img_two' => null,
+                'meta' => [],
+            ],
+            [
+                'uc' => 789,
+                'estacao_amostral' => 1003,
+                'unidade_amostral' => 2003,
+                'tipo' => 'resex',
+                'check_point' => [18, 28, 38],
+                'img_one' => null,
+                'img_two' => null,
+                'meta' => [],
+            ],
+        ];
+
+        $result = (new DataCollectionSpreadsheetReviewPipeline())
+            ->setDataCollection($this->planilha_path)
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoices())
             ->process();
 
         $this->assertEquals($expected, $result);
@@ -199,6 +250,20 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $this->assertSame('E esperado um valor inteiro.', $expected->errors()[0]['message']);
     }
 
+    #[Test]
+    public function pipelineShouldAppendErrorWhenDynamicChoiceDoesNotMatchSpreadsheetValue(): void
+    {
+        $expected = (new DataCollectionSpreadsheetReviewPipeline())
+            ->setDataCollection($this->planilha_path)
+            ->validateCollectionFromJson($this->formExampleImagesJson()['children'], $this->dynamicChoicesWithMissingUc())
+            ->validateCollection();
+
+        $this->assertFalse($expected->valid());
+        $this->assertCount(1, $expected->errors());
+        $this->assertSame('uc', $expected->errors()[0]['key']);
+        $this->assertStringContainsString('nao foi encontrado nas escolhas dinamicas', $expected->errors()[0]['message']);
+    }
+
     private function formExampleImagesJson(): array
     {
         return json_decode(
@@ -207,5 +272,46 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
             512,
             JSON_THROW_ON_ERROR,
         );
+    }
+
+    private function dynamicChoices(): array
+    {
+        return [
+            'uc' => [
+                ['label' => 'Estação Ecológica da Terra do Meio', 'name' => 123],
+                ['label' => 'Floresta Nacional de Brasília', 'name' => 456],
+                ['label' => 'Reserva Extrativista do Tapajós', 'name' => 789],
+            ],
+            'estacao_amostral' => [
+                ['label' => 'EA-001 Teste', 'name' => 1001],
+                ['label' => 'EA-002 Teste', 'name' => 1002],
+                ['label' => 'EA-003 Teste', 'name' => 1003],
+            ],
+            'unidade_amostral' => [
+                ['label' => 'UA-001 Teste', 'name' => 2001],
+                ['label' => 'UA-002 Teste', 'name' => 2002],
+                ['label' => 'UA-003 Teste', 'name' => 2003],
+            ],
+        ];
+    }
+
+    private function dynamicChoicesWithMissingUc(): array
+    {
+        return [
+            'uc' => [
+                ['label' => 'Floresta Nacional de Brasília', 'name' => 456],
+                ['label' => 'Reserva Extrativista do Tapajós', 'name' => 789],
+            ],
+            'estacao_amostral' => [
+                ['label' => 'EA-001 Teste', 'name' => 1001],
+                ['label' => 'EA-002 Teste', 'name' => 1002],
+                ['label' => 'EA-003 Teste', 'name' => 1003],
+            ],
+            'unidade_amostral' => [
+                ['label' => 'UA-001 Teste', 'name' => 2001],
+                ['label' => 'UA-002 Teste', 'name' => 2002],
+                ['label' => 'UA-003 Teste', 'name' => 2003],
+            ],
+        ];
     }
 }
