@@ -110,8 +110,49 @@ class StructureSpreadsheetData
     {
         $numCols = count($this->headers);
         $currentRow = array_pad($currentRow, $numCols, null);
+        $groupedIndices = $this->groupedColumnIndices();
+        $processedIndices = [];
+
+        foreach ($groupedIndices as $indices) {
+            $groupHasValuesInCurrentRow = false;
+            $groupAlreadyExpanded = false;
+
+            foreach ($indices as $index) {
+                if (! $this->isEmptyCell($currentRow[$index] ?? null)) {
+                    $groupHasValuesInCurrentRow = true;
+                }
+
+                if (is_array($modelRow[$index] ?? null)) {
+                    $groupAlreadyExpanded = true;
+                }
+            }
+
+            if (! $groupHasValuesInCurrentRow) {
+                continue;
+            }
+
+            foreach ($indices as $index) {
+                $processedIndices[$index] = true;
+                $cell = $currentRow[$index] ?? null;
+
+                if (! is_array($modelRow[$index])) {
+                    $baseValue = $modelRow[$index] ?? null;
+                    $modelRow[$index] = [$this->isEmptyCell($baseValue) ? null : $baseValue];
+                }
+
+                if (! $groupAlreadyExpanded && ! array_key_exists($index, $modelRow)) {
+                    $modelRow[$index] = [null];
+                }
+
+                $modelRow[$index][] = $this->isEmptyCell($cell) ? null : $cell;
+            }
+        }
 
         for ($i = 0; $i < $numCols; $i++) {
+            if (isset($processedIndices[$i])) {
+                continue;
+            }
+
             $cell = $currentRow[$i];
 
             if ($this->isEmptyCell($cell)) {
@@ -132,6 +173,25 @@ class StructureSpreadsheetData
         }
 
         return $modelRow;
+    }
+
+    /**
+     * @return array<string, list<int>>
+     */
+    protected function groupedColumnIndices(): array
+    {
+        $groups = [];
+
+        foreach ($this->headers as $index => $header) {
+            if (! str_contains($header, '/')) {
+                continue;
+            }
+
+            [$groupKey] = explode('/', $header, 2);
+            $groups[$groupKey][] = $index;
+        }
+
+        return $groups;
     }
 
     protected function isEmptyCell(mixed $cell): bool
