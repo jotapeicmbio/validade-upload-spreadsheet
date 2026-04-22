@@ -23,10 +23,11 @@ class XformXmlBuilder
         string $rootVersion,
         ?string $uuid = null,
         ?string $timestamp = null,
+        ?array $formDefinition = null,
     ): string {
         $builder = new self();
 
-        return $builder->buildXmlDocument($data, $keys, $rootName, $rootId, $rootVersion, $uuid, $timestamp);
+        return $builder->buildXmlDocument($data, $keys, $rootName, $rootId, $rootVersion, $uuid, $timestamp, $formDefinition);
     }
 
     /**
@@ -41,9 +42,17 @@ class XformXmlBuilder
         string $rootVersion,
         ?string $uuid,
         ?string $timestamp,
+        ?array $formDefinition = null,
     ): string {
-        $normalizedData = $this->addEmptyKeysInDict($data, $keys);
-        $preparedData = $this->prepareDataToXml([$normalizedData])[0] ?? [];
+        if ($this->hasFormStructure($formDefinition)) {
+            $preparedData = $this->prepareDataUsingFormDefinition(
+                $data,
+                $formDefinition['children'],
+            );
+        } else {
+            $normalizedData = $this->addEmptyKeysInDict($data, $keys);
+            $preparedData = $this->prepareDataToXml([$normalizedData])[0] ?? [];
+        }
         $preparedDataWithMeta = $this->prepareMetaXml($preparedData, $uuid);
 
         $dateTime = $timestamp ?? (new \DateTimeImmutable())->format('Y-m-d\TH:i:s.000-03:00');
@@ -91,6 +100,132 @@ class XformXmlBuilder
         }
 
         return $data;
+    }
+
+    protected function hasFormStructure(?array $formDefinition): bool
+    {
+        return isset($formDefinition['children'])
+            && is_array($formDefinition['children'])
+            && $formDefinition['children'] !== [];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param list<array<string, mixed>> $children
+     * @return array<string, mixed>
+     */
+    protected function prepareDataUsingFormDefinition(array $data, array $children): array
+    {
+        $preparedData = [];
+
+        foreach ($children as $child) {
+            $name = $child['name'] ?? null;
+            if (! is_string($name) || $name === '') {
+                continue;
+            }
+            if (str_starts_with($name, '_')) {
+                continue;
+            }
+
+            $type = $child['type'] ?? null;
+            $value = $this->valueForField($data, $name);
+
+            if ($type === 'group') {
+                $groupData = is_array($value) && ! array_is_list($value) ? $value : [];
+                $preparedData[$name] = $this->prepareDataUsingFormDefinition($groupData, $child['children'] ?? []);
+
+                continue;
+            }
+
+            if ($type === 'repeat') {
+                if (is_array($value) && array_is_list($value) && $value !== []) {
+                    $preparedData[$name] = array_map(
+                        fn (mixed $item): array => $this->prepareDataUsingFormDefinition(
+                            is_array($item) ? $item : [],
+                            $child['children'] ?? [],
+                        ),
+                        $value,
+                    );
+
+                    continue;
+                }
+
+                $preparedData[$name] = [[]];
+
+                continue;
+            }
+
+            $preparedData[$name] = $this->normalizeValueByDefinition($child, $value);
+        }
+
+        return $preparedData;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    protected function valueForField(array $data, string $fieldName): mixed
+    {
+        if (array_key_exists($fieldName, $data)) {
+            return $data[$fieldName];
+        }
+
+        $suffix = '/' . $fieldName;
+        foreach ($data as $key => $value) {
+            if (is_string($key) && str_ends_with($key, $suffix)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $definition
+     */
+    protected function normalizeValueByDefinition(array $definition, mixed $value): mixed
+    {
+        $type = $definition['type'] ?? null;
+        $calculate = $definition['bind']['calculate'] ?? null;
+
+        if ($calculate === 'uuid()') {
+            return $this->hasValue($value) ? (string) $value : $this->generateUuid();
+        }
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return match ($type) {
+            'integer' => is_numeric($value) ? (string) (int) $value : $value,
+            'decimal' => $this->normalizeDecimalValue($value),
+            default => $value,
+        };
+    }
+
+    protected function normalizeDecimalValue(mixed $value): mixed
+    {
+        if (! is_numeric($value)) {
+            return $value;
+        }
+
+        $stringValue = (string) $value;
+        if (str_contains($stringValue, '.')) {
+            $normalized = rtrim(rtrim($stringValue, '0'), '.');
+
+            return str_contains($normalized, '.') ? $normalized : $normalized . '.0';
+        }
+
+        return $stringValue . '.0';
+    }
+
+    protected function generateUuid(): string
+    {
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
     /**
@@ -152,6 +287,12 @@ class XformXmlBuilder
 
                     continue;
                 }
+                if (is_array($value)) {
+                    unset($newRow[$key]);
+                    $newRow[$newKey] = $this->prepareAssociativeDataToXml($value);
+
+                    continue;
+                }
                 unset($newRow[$key]);
                 $newRow[$newKey] = $value;
             }
@@ -165,12 +306,56 @@ class XformXmlBuilder
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
+    protected function prepareAssociativeDataToXml(array $data): array
+    {
+        $preparedData = [];
+
+        foreach ($data as $key => $value) {
+            if (str_starts_with((string) $key, '_')) {
+                continue;
+            }
+
+            $newKey = $this->lastSegment((string) $key);
+
+            if (is_array($value) && array_is_list($value)) {
+                $preparedData[$newKey] = $this->prepareDataToXml($value);
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $preparedData[$newKey] = $this->prepareAssociativeDataToXml($value);
+
+                continue;
+            }
+
+            $preparedData[$newKey] = $value;
+        }
+
+        return $preparedData;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
     protected function prepareMetaXml(array $data, ?string $uuid): array
     {
         $uuidValue = $uuid === null ? 'None' : $uuid;
+        $nestedMetaInstanceId = null;
+        if (
+            isset($data['meta'])
+            && is_array($data['meta'])
+            && array_key_exists('instanceID', $data['meta'])
+        ) {
+            $nestedMetaInstanceId = $data['meta']['instanceID'];
+        }
+
         $instanceId = array_key_exists('instanceID', $data)
             ? (string) $data['instanceID']
-            : sprintf('uuid:%s', $uuidValue);
+            : ($nestedMetaInstanceId !== null || (isset($data['meta']) && is_array($data['meta']) && array_key_exists('instanceID', $data['meta']))
+                ? (string) $nestedMetaInstanceId
+                : sprintf('uuid:%s', $uuidValue));
 
         unset($data['instanceID']);
         $data['meta'] = [['instanceID' => $instanceId]];
@@ -211,6 +396,14 @@ class XformXmlBuilder
                         $this->appendDataToXml($document, $childElement, $listItem);
                     }
                 }
+
+                continue;
+            }
+
+            if (is_array($value)) {
+                $childElement = $document->createElement((string) $key);
+                $parentElement->appendChild($childElement);
+                $this->appendDataToXml($document, $childElement, $value);
 
                 continue;
             }
