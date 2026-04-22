@@ -23,8 +23,8 @@ final class LocalFullPipelineIntegrationTest extends TestCase
 
         foreach ($formDirectories as $formDirectory) {
             $spreadsheetPath = $this->findSingleFile($formDirectory . '/planilhas', ['xlsx', 'xls', 'csv']);
-            $jsonPath = $this->findSingleFile($formDirectory . '/jsons', ['json']);
-            $databasePath = $this->findSingleFile($formDirectory . '/database', ['php']);
+            $jsonPath = $this->findSingleFile($formDirectory, ['json']);
+            $databasePath = $this->findSingleFile($formDirectory, ['php']);
 
             self::assertNotNull($spreadsheetPath, sprintf('Spreadsheet fixture not found for %s', basename($formDirectory)));
             self::assertNotNull($jsonPath, sprintf('JSON fixture not found for %s', basename($formDirectory)));
@@ -107,8 +107,8 @@ final class LocalFullPipelineIntegrationTest extends TestCase
 
         foreach ($formDirectories as $formDirectory) {
             $spreadsheetPath = $this->findSingleFile($formDirectory . '/planilhas', ['xlsx', 'xls', 'csv']);
-            $jsonPath = $this->findSingleFile($formDirectory . '/jsons', ['json']);
-            $databasePath = $this->findSingleFile($formDirectory . '/database', ['php']);
+            $jsonPath = $this->findSingleFile($formDirectory, ['json']);
+            $databasePath = $this->findSingleFile($formDirectory, ['php']);
             $expectedInstances = $this->findFilesByExtensions($formDirectory . '/instances', ['xml']);
 
             if ($spreadsheetPath === null || $jsonPath === null || $databasePath === null || $expectedInstances === []) {
@@ -198,8 +198,8 @@ final class LocalFullPipelineIntegrationTest extends TestCase
 
             if (
                 is_dir($path)
-                && is_dir($path . '/database')
-                && is_dir($path . '/jsons')
+                && is_file($path . '/database.php')
+                && is_file($path . '/form.json')
                 && is_dir($path . '/planilhas')
             ) {
                 $directories[] = $path;
