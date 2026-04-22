@@ -49,13 +49,18 @@ final class LocalFullPipelineIntegrationTest extends TestCase
                 ->timestamp('2026-04-10T18:01:45.000-03:00')
                 ->generate();
 
-            self::assertCount(3, $generatedFiles);
+            self::assertCount(count($expectedInstancePaths), $generatedFiles);
 
             foreach ($generatedFiles as $index => $generatedFile) {
                 self::assertFileExists($generatedFile);
                 self::assertSame(
                     $this->normalizeXml((string) file_get_contents($expectedInstancePaths[$index])),
                     $this->normalizeXml((string) file_get_contents($generatedFile)),
+                    sprintf(
+                        'XML mismatch between expected instance "%s" and generated file "%s".',
+                        basename($expectedInstancePaths[$index]),
+                        basename($generatedFile),
+                    ),
                 );
             }
         } finally {
@@ -136,7 +141,20 @@ final class LocalFullPipelineIntegrationTest extends TestCase
         $document->formatOutput = false;
         $document->loadXML($xml);
 
+        $this->normalizeDynamicUuidFields($document);
+
         return (string) $document->C14N();
+    }
+
+    private function normalizeDynamicUuidFields(DOMDocument $document): void
+    {
+        $xpath = new \DOMXPath($document);
+
+        foreach (['//tocas_uuid', '//arvores_uuid', '//meta/instanceID'] as $query) {
+            foreach ($xpath->query($query) ?: [] as $node) {
+                $node->nodeValue = '';
+            }
+        }
     }
 
     /**
