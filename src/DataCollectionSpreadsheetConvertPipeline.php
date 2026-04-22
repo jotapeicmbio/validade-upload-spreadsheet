@@ -95,6 +95,7 @@ class DataCollectionSpreadsheetConvertPipeline
                 $instanceVersion,
                 null,
                 $this->resolveTimestamp(),
+                $this->formDefinition !== [] ? $this->formDefinition : null,
             );
 
             $filePath = sprintf('%s/%s_%d', $this->outputDirectory, $instanceName, $index + 1);
