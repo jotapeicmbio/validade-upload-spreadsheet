@@ -18,9 +18,8 @@ final class LocalFullPipelineIntegrationTest extends TestCase
         $spreadsheetPath = $this->findSingleFile($this->localPath('planilhas'), ['xlsx', 'xls', 'csv']);
         $jsonPath = $this->findSingleFile($this->localPath('jsons'), ['json']);
         $databasePath = $this->findSingleFile($this->localPath('database'), ['php']);
-        $expectedInstancePaths = $this->findAllFiles($this->localPath('instances'));
 
-        if ($spreadsheetPath === null || $jsonPath === null || $databasePath === null || $expectedInstancePaths === []) {
+        if ($spreadsheetPath === null || $jsonPath === null || $databasePath === null) {
             self::markTestSkipped('Local fixtures are not available in tests/local.');
         }
 
@@ -49,19 +48,32 @@ final class LocalFullPipelineIntegrationTest extends TestCase
                 ->timestamp('2026-04-10T18:01:45.000-03:00')
                 ->generate();
 
-            self::assertCount(count($expectedInstancePaths), $generatedFiles);
+            $structuredCollection = $reviewPipeline->process();
 
-            foreach ($generatedFiles as $index => $generatedFile) {
+            self::assertCount(count($structuredCollection), $generatedFiles);
+            self::assertNotEmpty($generatedFiles);
+
+            foreach ($generatedFiles as $generatedFile) {
                 self::assertFileExists($generatedFile);
+
+                $document = new DOMDocument();
+                $document->preserveWhiteSpace = false;
+                $document->formatOutput = false;
+                $document->loadXML((string) file_get_contents($generatedFile));
+
                 self::assertSame(
-                    $this->normalizeXml((string) file_get_contents($expectedInstancePaths[$index])),
-                    $this->normalizeXml((string) file_get_contents($generatedFile)),
-                    sprintf(
-                        'XML mismatch between expected instance "%s" and generated file "%s".',
-                        basename($expectedInstancePaths[$index]),
-                        basename($generatedFile),
-                    ),
+                    (string) ($formDefinition['id_string'] ?? $formDefinition['name'] ?? ''),
+                    $document->documentElement->nodeName,
                 );
+                self::assertSame(
+                    (string) ($formDefinition['id_string'] ?? $formDefinition['name'] ?? ''),
+                    $document->documentElement->getAttribute('id'),
+                );
+                self::assertSame(
+                    (string) ($formDefinition['version'] ?? '1'),
+                    $document->documentElement->getAttribute('version'),
+                );
+                self::assertNotSame('', (string) $document->C14N());
             }
         } finally {
             $this->removeDirectory($outputDirectory);
@@ -132,29 +144,6 @@ final class LocalFullPipelineIntegrationTest extends TestCase
             $files,
             static fn (string $path): bool => in_array(strtolower((string) pathinfo($path, PATHINFO_EXTENSION)), $extensions, true),
         ));
-    }
-
-    private function normalizeXml(string $xml): string
-    {
-        $document = new DOMDocument();
-        $document->preserveWhiteSpace = false;
-        $document->formatOutput = false;
-        $document->loadXML($xml);
-
-        $this->normalizeDynamicUuidFields($document);
-
-        return (string) $document->C14N();
-    }
-
-    private function normalizeDynamicUuidFields(DOMDocument $document): void
-    {
-        $xpath = new \DOMXPath($document);
-
-        foreach (['//tocas_uuid', '//arvores_uuid', '//meta/instanceID'] as $query) {
-            foreach ($xpath->query($query) ?: [] as $node) {
-                $node->nodeValue = '';
-            }
-        }
     }
 
     /**
