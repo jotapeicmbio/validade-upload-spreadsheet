@@ -15,33 +15,47 @@ final class LocalFullPipelineIntegrationTest extends TestCase
     #[Test]
     public function itRunsTheFullPipelineUsingLocalFixtures(): void
     {
-        $spreadsheetPath = $this->findSingleFile($this->localPath('planilhas'), ['xlsx', 'xls', 'csv']);
-        $jsonPath = $this->findSingleFile($this->localPath('jsons'), ['json']);
-        $databasePath = $this->findSingleFile($this->localPath('database'), ['php']);
+        $formDirectories = $this->findFormDirectories();
 
-        if ($spreadsheetPath === null || $jsonPath === null || $databasePath === null) {
+        if ($formDirectories === []) {
             self::markTestSkipped('Local fixtures are not available in tests/local.');
         }
 
-        $formDefinition = json_decode(
-            (string) file_get_contents($jsonPath),
-            true,
-            512,
-            JSON_THROW_ON_ERROR,
-        );
-        /** @var array<string, list<array<string, mixed>>> $dynamicChoices */
-        $dynamicChoices = require $databasePath;
+        foreach ($formDirectories as $formDirectory) {
+            $spreadsheetPath = $this->findSingleFile($formDirectory . '/planilhas', ['xlsx', 'xls', 'csv']);
+            $jsonPath = $this->findSingleFile($formDirectory . '/jsons', ['json']);
+            $databasePath = $this->findSingleFile($formDirectory . '/database', ['php']);
 
-        $reviewPipeline = (new DataCollectionSpreadsheetReviewPipeline())
-            ->setDataCollection($spreadsheetPath)
-            ->validateCollectionFromJson($formDefinition, $dynamicChoices)
-            ->validateCollection();
+            self::assertNotNull($spreadsheetPath, sprintf('Spreadsheet fixture not found for %s', basename($formDirectory)));
+            self::assertNotNull($jsonPath, sprintf('JSON fixture not found for %s', basename($formDirectory)));
+            self::assertNotNull($databasePath, sprintf('Database fixture not found for %s', basename($formDirectory)));
 
-        self::assertTrue($reviewPipeline->valid(), $this->formatErrors($reviewPipeline->errors()));
+            $formDefinition = json_decode(
+                (string) file_get_contents($jsonPath),
+                true,
+                512,
+                JSON_THROW_ON_ERROR,
+            );
+            /** @var array<string, list<array<string, mixed>>> $dynamicChoices */
+            $dynamicChoices = require $databasePath;
 
-        $outputDirectory = sprintf('%s/validade-upload-spreadsheet-%s', sys_get_temp_dir(), uniqid('', true));
+            $reviewPipeline = (new DataCollectionSpreadsheetReviewPipeline())
+                ->setDataCollection($spreadsheetPath)
+                ->validateCollectionFromJson($formDefinition, $dynamicChoices)
+                ->validateCollection();
 
-        try {
+            self::assertTrue(
+                $reviewPipeline->valid(),
+                sprintf(
+                    "Form directory: %s\n%s",
+                    basename($formDirectory),
+                    $this->formatErrors($reviewPipeline->errors()),
+                ),
+            );
+
+            $outputDirectory = $this->localPath('gerados/' . basename($formDirectory));
+            $this->removeDirectory($outputDirectory);
+
             $generatedFiles = (new DataCollectionSpreadsheetConvertPipeline())
                 ->collection($reviewPipeline)
                 ->outputDirectory($outputDirectory)
@@ -75,14 +89,51 @@ final class LocalFullPipelineIntegrationTest extends TestCase
                 );
                 self::assertNotSame('', (string) $document->C14N());
             }
-        } finally {
-            $this->removeDirectory($outputDirectory);
         }
     }
 
     private function localPath(string $relativePath): string
     {
         return __DIR__ . '/../local/' . $relativePath;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function findFormDirectories(): array
+    {
+        $root = $this->localPath('');
+        if (! is_dir($root)) {
+            return [];
+        }
+
+        $entries = scandir($root);
+        if ($entries === false) {
+            return [];
+        }
+
+        $directories = [];
+
+        foreach ($entries as $entry) {
+            if ($entry === '.' || $entry === '..' || $entry === 'gerados') {
+                continue;
+            }
+
+            $path = $root . $entry;
+
+            if (
+                is_dir($path)
+                && is_dir($path . '/database')
+                && is_dir($path . '/jsons')
+                && is_dir($path . '/planilhas')
+            ) {
+                $directories[] = $path;
+            }
+        }
+
+        sort($directories);
+
+        return $directories;
     }
 
     /**
@@ -205,6 +256,11 @@ final class LocalFullPipelineIntegrationTest extends TestCase
             }
 
             $path = $directory . '/' . $entry;
+
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+                continue;
+            }
 
             if (is_file($path)) {
                 unlink($path);
