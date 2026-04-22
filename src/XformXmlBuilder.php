@@ -83,7 +83,7 @@ class XformXmlBuilder
         $this->appendDataToXml($document, $rootElement, $preparedDataWithMeta);
 
         /** @var string $xml */
-        $xml = $document->saveXML($document->documentElement);
+        $xml = $document->saveXML();
 
         return $xml;
     }
