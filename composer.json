@@ -42,7 +42,7 @@
     "require": {
         "phpoffice/phpspreadsheet": "5.7.0",
         "icmbio/validate-xpath-expression": "1.0.1",
-        "ramsey/uuid": "5.x-dev"
+        "ramsey/uuid": "4.9.2"
     },
         "scripts": {
         "test": "vendor/bin/phpunit --colors=always --testdox",
