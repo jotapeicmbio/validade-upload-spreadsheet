@@ -11,6 +11,34 @@ use PHPUnit\Framework\TestCase;
 class StructureSpreadsheetDataTest extends TestCase
 {
     #[Test]
+    public function devePropagarDadosDoRepeatPaiQuandoApenasSubRepeatRecebeNovaLinha(): void
+    {
+        $input = [
+            [
+                'id_coleta',
+                'individuos_registro/numero_troncos',
+                'individuos_registro/observacoes_individuo',
+                'individuos_registro/troncos_registro/etiqueta_atual',
+                'individuos_registro/troncos_registro/cap_cm',
+            ],
+            ['ID', 'Numero de troncos', 'Observacoes', 'Etiqueta atual', 'CAP'],
+            ['coleta_001', '2', 'ok', 'T001', '10'],
+            [null, null, null, 'T002', '12'],
+        ];
+
+        $actual = (new StructureSpreadsheetData($input))
+            ->estruture()
+            ->toArray();
+
+        self::assertIsArray($actual[0]['individuos_registro'] ?? null);
+        self::assertCount(2, $actual[0]['individuos_registro']);
+        self::assertSame('2', $actual[0]['individuos_registro'][0]['individuos_registro/numero_troncos']);
+        self::assertSame('2', $actual[0]['individuos_registro'][1]['individuos_registro/numero_troncos']);
+        self::assertSame('ok', $actual[0]['individuos_registro'][0]['individuos_registro/observacoes_individuo']);
+        self::assertSame('ok', $actual[0]['individuos_registro'][1]['individuos_registro/observacoes_individuo']);
+    }
+
+    #[Test]
     public function devePreencherAsLinhasVaziasComDadosDaLinhaValida(): void
     {
         $input = [

@@ -113,13 +113,22 @@ class StructureSpreadsheetData
         $groupedIndices = $this->groupedColumnIndices();
         $processedIndices = [];
 
-        foreach ($groupedIndices as $indices) {
+        foreach ($groupedIndices as $groupKey => $indices) {
             $groupHasValuesInCurrentRow = false;
             $groupAlreadyExpanded = false;
+            $groupHasNestedValuesInCurrentRow = false;
+            $groupHasParentValuesInCurrentRow = false;
 
             foreach ($indices as $index) {
+                $isNestedColumn = $this->isNestedGroupColumn($groupKey, $index);
+
                 if (! $this->isEmptyCell($currentRow[$index] ?? null)) {
                     $groupHasValuesInCurrentRow = true;
+                    if ($isNestedColumn) {
+                        $groupHasNestedValuesInCurrentRow = true;
+                    } else {
+                        $groupHasParentValuesInCurrentRow = true;
+                    }
                 }
 
                 if (is_array($modelRow[$index] ?? null)) {
@@ -131,9 +140,12 @@ class StructureSpreadsheetData
                 continue;
             }
 
+            $shouldPropagateParentValues = $groupHasNestedValuesInCurrentRow && ! $groupHasParentValuesInCurrentRow;
+
             foreach ($indices as $index) {
                 $processedIndices[$index] = true;
                 $cell = $currentRow[$index] ?? null;
+                $isNestedColumn = $this->isNestedGroupColumn($groupKey, $index);
 
                 if (! is_array($modelRow[$index])) {
                     $baseValue = $modelRow[$index] ?? null;
@@ -144,7 +156,13 @@ class StructureSpreadsheetData
                     $modelRow[$index] = [null];
                 }
 
-                $modelRow[$index][] = $this->isEmptyCell($cell) ? null : $cell;
+                $valueToAppend = $this->isEmptyCell($cell) ? null : $cell;
+
+                if ($valueToAppend === null && $shouldPropagateParentValues && ! $isNestedColumn) {
+                    $valueToAppend = $this->lastNonEmptyValue($modelRow[$index]);
+                }
+
+                $modelRow[$index][] = $valueToAppend;
             }
         }
 
@@ -326,5 +344,29 @@ class StructureSpreadsheetData
         $segments = explode('/', $fieldPath);
 
         return (string) end($segments);
+    }
+
+    protected function isNestedGroupColumn(string $groupKey, int $index): bool
+    {
+        $header = (string) ($this->headers[$index] ?? '');
+
+        if (! str_starts_with($header, $groupKey . '/')) {
+            return false;
+        }
+
+        $segments = explode('/', $header);
+
+        return count($segments) > 2;
+    }
+
+    protected function lastNonEmptyValue(array $values): mixed
+    {
+        for ($index = count($values) - 1; $index >= 0; $index--) {
+            if (! $this->isEmptyCell($values[$index])) {
+                return $values[$index];
+            }
+        }
+
+        return null;
     }
 }
