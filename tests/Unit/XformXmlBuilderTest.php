@@ -80,4 +80,65 @@ final class XformXmlBuilderTest extends TestCase
 
         self::assertSame('uuid:my-uuid-value', $xpath->evaluate('string(/xml/meta/instanceID)'));
     }
+
+    public function test_build_should_include_troncos_uuid_in_nested_repeat_from_form_definition(): void
+    {
+        $data = [
+            'individuos_registro' => [[
+                'individuos_registro/troncos_registro' => [[
+                    'individuos_registro/troncos_registro/etiqueta_atual' => 'T001',
+                ]],
+            ]],
+        ];
+
+        $keys = [
+            'individuos_registro',
+            'individuos_registro/troncos_registro',
+            'individuos_registro/troncos_registro/etiqueta_atual',
+        ];
+
+        $formDefinition = [
+            'children' => [[
+                'name' => 'individuos_registro',
+                'type' => 'repeat',
+                'children' => [[
+                    'name' => 'troncos_registro',
+                    'type' => 'repeat',
+                    'children' => [
+                        [
+                            'name' => 'etiqueta_atual',
+                            'type' => 'text',
+                        ],
+                        [
+                            'name' => 'troncos_uuid',
+                            'type' => 'calculate',
+                            'bind' => [
+                                'calculate' => 'uuid()',
+                            ],
+                        ],
+                    ],
+                ]],
+            ]],
+        ];
+
+        $xml = XformXmlBuilder::build(
+            $data,
+            $keys,
+            'xml',
+            'xml_id',
+            '1.0',
+            null,
+            '2026-04-01T10:20:30.000-03:00',
+            $formDefinition,
+        );
+
+        $doc = new DOMDocument();
+        $doc->loadXML($xml);
+        $xpath = new DOMXPath($doc);
+
+        self::assertNotSame(
+            '',
+            $xpath->evaluate('string(/xml/individuos_registro/troncos_registro/troncos_uuid)'),
+        );
+    }
 }

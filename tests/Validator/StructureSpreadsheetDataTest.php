@@ -36,6 +36,16 @@ class StructureSpreadsheetDataTest extends TestCase
         self::assertSame('2', $actual[0]['individuos_registro'][1]['individuos_registro/numero_troncos']);
         self::assertSame('ok', $actual[0]['individuos_registro'][0]['individuos_registro/observacoes_individuo']);
         self::assertSame('ok', $actual[0]['individuos_registro'][1]['individuos_registro/observacoes_individuo']);
+        self::assertArrayHasKey('troncos_registro', $actual[0]['individuos_registro'][0]);
+        self::assertArrayHasKey('troncos_registro', $actual[0]['individuos_registro'][1]);
+        self::assertSame(
+            'T001',
+            $actual[0]['individuos_registro'][0]['troncos_registro'][0]['individuos_registro/troncos_registro/etiqueta_atual'],
+        );
+        self::assertSame(
+            'T002',
+            $actual[0]['individuos_registro'][1]['troncos_registro'][0]['individuos_registro/troncos_registro/etiqueta_atual'],
+        );
     }
 
     #[Test]
