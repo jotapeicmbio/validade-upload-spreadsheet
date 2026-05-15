@@ -247,7 +247,7 @@ class StructureSpreadsheetData
         }
 
         foreach ($groupedColumns as $groupKey => $columns) {
-            $structured[$groupKey] = $this->buildGroupedValue($columns);
+            $structured[$groupKey] = $this->buildGroupedValue($columns, $groupKey);
         }
 
         return $structured;
@@ -257,20 +257,20 @@ class StructureSpreadsheetData
      * @param array<int, array{header: string, value: mixed}> $columns
      * @return array<string, mixed>|array<int, array<string, mixed>>
      */
-    protected function buildGroupedValue(array $columns): array
+    protected function buildGroupedValue(array $columns, string $groupKey): array
     {
         if (! $this->groupHasRepeatedItems($columns)) {
             return $this->buildSingleGroupItem($columns);
         }
 
-        return $this->buildGroupedItems($columns);
+        return $this->buildGroupedItems($columns, $groupKey);
     }
 
     /**
      * @param array<int, array{header: string, value: mixed}> $columns
      * @return array<int, array<string, mixed>>
      */
-    protected function buildGroupedItems(array $columns): array
+    protected function buildGroupedItems(array $columns, string $groupKey): array
     {
         $itemCount = 1;
 
@@ -291,6 +291,8 @@ class StructureSpreadsheetData
                     ? ($value[$index] ?? null)
                     : $value;
             }
+
+            $item = $this->normalizeNestedRepeatItem($item, $groupKey);
 
             if ($this->itemHasValue($item)) {
                 $items[] = $item;
@@ -368,5 +370,56 @@ class StructureSpreadsheetData
         }
 
         return null;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @return array<string, mixed>
+     */
+    protected function normalizeNestedRepeatItem(array $item, string $groupKey): array
+    {
+        $normalized = [];
+        $nestedRepeatRows = [];
+
+        foreach ($item as $fieldPath => $value) {
+            if (! is_string($fieldPath) || ! str_starts_with($fieldPath, $groupKey . '/')) {
+                $normalized[$fieldPath] = $value;
+                continue;
+            }
+
+            $relativePath = substr($fieldPath, strlen($groupKey) + 1);
+            $segments = explode('/', $relativePath);
+
+            if (count($segments) <= 1) {
+                $normalized[$fieldPath] = $value;
+                continue;
+            }
+
+            $nestedRepeatKey = $segments[0];
+            $nestedFieldPath = $groupKey . '/' . $nestedRepeatKey . '/' . implode('/', array_slice($segments, 1));
+
+            if (! array_key_exists($nestedRepeatKey, $nestedRepeatRows)) {
+                $nestedRepeatRows[$nestedRepeatKey] = [];
+            }
+
+            if (! array_key_exists(0, $nestedRepeatRows[$nestedRepeatKey])) {
+                $nestedRepeatRows[$nestedRepeatKey][0] = [];
+            }
+
+            $nestedRepeatRows[$nestedRepeatKey][0][$nestedFieldPath] = $value;
+        }
+
+        foreach ($nestedRepeatRows as $nestedRepeatKey => $rows) {
+            $filteredRows = array_values(array_filter(
+                $rows,
+                fn (array $row): bool => $this->itemHasValue($row),
+            ));
+
+            if ($filteredRows !== []) {
+                $normalized[$nestedRepeatKey] = $filteredRows;
+            }
+        }
+
+        return $normalized;
     }
 }
