@@ -83,7 +83,10 @@ final class CompleteFlowTest extends TestCase
         self::assertSame('Bruno', $xpath->evaluate('string(/coleta/coletor[2]/nome)'));
         self::assertSame('ana.jpg', $xpath->evaluate('string(/coleta/coletor[1]/foto)'));
         self::assertSame('bruno.jpg', $xpath->evaluate('string(/coleta/coletor[2]/foto)'));
-        self::assertSame('uuid:None', $xpath->evaluate('string(/coleta/meta/instanceID)'));
+        self::assertMatchesRegularExpression(
+            '/^uuid:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
+            $xpath->evaluate('string(/coleta/meta/instanceID)'),
+        );
     }
 
     /**

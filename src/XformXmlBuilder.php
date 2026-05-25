@@ -341,7 +341,6 @@ class XformXmlBuilder
      */
     protected function prepareMetaXml(array $data, ?string $uuid): array
     {
-        $uuidValue = $uuid === null ? 'None' : $uuid;
         $nestedMetaInstanceId = null;
         if (
             isset($data['meta'])
@@ -351,11 +350,16 @@ class XformXmlBuilder
             $nestedMetaInstanceId = $data['meta']['instanceID'];
         }
 
-        $instanceId = array_key_exists('instanceID', $data)
-            ? (string) $data['instanceID']
-            : ($nestedMetaInstanceId !== null || (isset($data['meta']) && is_array($data['meta']) && array_key_exists('instanceID', $data['meta']))
-                ? (string) $nestedMetaInstanceId
-                : sprintf('uuid:%s', $uuidValue));
+        $topLevelInstanceId = array_key_exists('instanceID', $data) ? $data['instanceID'] : null;
+        if ($this->hasValue($topLevelInstanceId)) {
+            $instanceId = (string) $topLevelInstanceId;
+        } elseif ($this->hasValue($nestedMetaInstanceId)) {
+            $instanceId = (string) $nestedMetaInstanceId;
+        } elseif ($this->hasValue($uuid)) {
+            $instanceId = sprintf('uuid:%s', $uuid);
+        } else {
+            $instanceId = sprintf('uuid:%s', $this->generateUuid());
+        }
 
         unset($data['instanceID']);
         $data['meta'] = [['instanceID' => $instanceId]];
