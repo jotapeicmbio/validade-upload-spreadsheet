@@ -68,8 +68,8 @@ class DataCollectionSpreadsheetConvertPipelineTest extends TestCase
         foreach ($result as $index => $filePath) {
             $this->assertFileExists($filePath);
             $this->assertSame(
-                $this->normalizeXml($expected[$index]),
-                $this->normalizeXml((string) file_get_contents($filePath)),
+                $this->normalizeXml($expected[$index], true),
+                $this->normalizeXml((string) file_get_contents($filePath), true),
             );
         }
     }
@@ -101,8 +101,8 @@ class DataCollectionSpreadsheetConvertPipelineTest extends TestCase
         $this->assertCount(1, $result);
         $this->assertFileExists($result[0]);
         $this->assertSame(
-            $this->normalizeXml($expected),
-            $this->normalizeXml((string) file_get_contents($result[0])),
+            $this->normalizeXml($expected, false),
+            $this->normalizeXml((string) file_get_contents($result[0]), false),
         );
     }
 
@@ -130,8 +130,8 @@ class DataCollectionSpreadsheetConvertPipelineTest extends TestCase
         foreach ($result as $index => $filePath) {
             $this->assertFileExists($filePath);
             $this->assertSame(
-                $this->normalizeXml($expected[$index]),
-                $this->normalizeXml((string) file_get_contents($filePath)),
+                $this->normalizeXml($expected[$index], true),
+                $this->normalizeXml((string) file_get_contents($filePath), true),
             );
         }
     }
@@ -181,12 +181,22 @@ class DataCollectionSpreadsheetConvertPipelineTest extends TestCase
         throw new Exception('File dont exists');
     }
 
-    protected function normalizeXml(string $xml): string
+    protected function normalizeXml(string $xml, bool $maskInstanceId = false): string
     {
         $document = new DOMDocument();
         $document->preserveWhiteSpace = false;
         $document->formatOutput = false;
         $document->loadXML($xml);
+
+        if ($maskInstanceId) {
+            $instanceIdNodes = $document->getElementsByTagName('instanceID');
+            foreach ($instanceIdNodes as $node) {
+                while ($node->firstChild !== null) {
+                    $node->removeChild($node->firstChild);
+                }
+                $node->appendChild($document->createTextNode('__INSTANCE_ID__'));
+            }
+        }
 
         return (string) $document->C14N();
     }
