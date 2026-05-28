@@ -170,9 +170,81 @@ class DataCollectionSpreadsheetReviewPipeline
         }
 
         $this->errors = [];
+        $this->data_collection = $this->sanitizeCollectionValues($this->data_collection);
         $this->data_collection = $this->resolveDynamicChoices($this->data_collection);
         $this->data_collection = $this->castCollectionValues($this->data_collection);
         $this->data_collection_prepared = true;
+    }
+
+    protected function sanitizeCollectionValues(array $collections): array
+    {
+        foreach ($collections as $index => $collection) {
+            if (! is_array($collection)) {
+                continue;
+            }
+
+            $collections[$index] = $this->sanitizeNodeValues($collection);
+        }
+
+        return $collections;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @return array<string, mixed>
+     */
+    protected function sanitizeNodeValues(array $node): array
+    {
+        foreach ($node as $fieldName => $fieldValue) {
+            if (is_array($fieldValue)) {
+                if (array_is_list($fieldValue)) {
+                    foreach ($fieldValue as $childIndex => $childValue) {
+                        if (is_array($childValue)) {
+                            $fieldValue[$childIndex] = $this->sanitizeNodeValues($childValue);
+                            continue;
+                        }
+
+                        $fieldValue[$childIndex] = $this->applySanitizers($childValue);
+                    }
+
+                    $node[$fieldName] = $fieldValue;
+                    continue;
+                }
+
+                $node[$fieldName] = $this->sanitizeNodeValues($fieldValue);
+                continue;
+            }
+
+            $node[$fieldName] = $this->applySanitizers($fieldValue);
+        }
+
+        return $node;
+    }
+
+    protected function applySanitizers(mixed $value): mixed
+    {
+        foreach ($this->sanitizers() as $sanitizer) {
+            $value = $sanitizer($value);
+        }
+
+        return $value;
+    }
+
+    /** @return list<callable(mixed): mixed> */
+    protected function sanitizers(): array
+    {
+        return [
+            fn (mixed $value): mixed => $this->sanitizeTrim($value),
+        ];
+    }
+
+    protected function sanitizeTrim(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        return trim($value);
     }
 
     protected function castCollectionValues(array $collections): array
