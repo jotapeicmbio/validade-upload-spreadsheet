@@ -36,11 +36,11 @@ final class CalculateFieldsTest extends TestCase
         self::assertArrayHasKey('coletor/uuid', $actual['coletor'][0]);
         self::assertArrayHasKey('coletor/uuid', $actual['coletor'][1]);
         self::assertMatchesRegularExpression(
-            '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-[7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
             $actual['coletor'][0]['coletor/uuid'],
         );
         self::assertMatchesRegularExpression(
-            '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/',
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-[7][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
             $actual['coletor'][1]['coletor/uuid'],
         );
         self::assertNotSame('', $actual['coletor'][0]['coletor/uuid']);

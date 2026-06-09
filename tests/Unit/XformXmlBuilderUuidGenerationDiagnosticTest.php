@@ -110,10 +110,9 @@ final class XformXmlBuilderUuidGenerationDiagnosticTest extends TestCase
 
         self::assertNotSame('', $uuidValue, sprintf('UUID vazio no caminho %s', $uuidXPath));
         self::assertMatchesRegularExpression(
-            '/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
             $uuidValue,
             sprintf('UUID inválido no caminho %s: %s', $uuidXPath, $uuidValue),
         );
     }
 }
-
