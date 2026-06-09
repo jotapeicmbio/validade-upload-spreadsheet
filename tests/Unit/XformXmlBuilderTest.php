@@ -46,7 +46,7 @@ final class XformXmlBuilderTest extends TestCase
 
         self::assertSame('Unidade 1', $xpath->evaluate('string(/xml/uc)'));
         self::assertMatchesRegularExpression(
-            '/^uuid:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
+            '/^uuid:[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
             $xpath->evaluate('string(/xml/meta/instanceID)'),
         );
         self::assertSame('2026-04-01T10:20:30.000-03:00', $xpath->evaluate('string(/xml/starttime)'));

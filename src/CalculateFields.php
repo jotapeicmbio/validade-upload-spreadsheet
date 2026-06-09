@@ -97,7 +97,7 @@ class CalculateFields
                             continue;
                         }
                         $rowData[$fieldPath] = $calculationExpression === 'uuid()'
-                            ? $this->generateUuidV4()
+                            ? $this->generateUuidV7()
                             : Xpath::validate(
                                 $calculationExpression,
                                 null,
@@ -133,9 +133,9 @@ class CalculateFields
         return $data;
     }
 
-    protected function generateUuidV4(): string
+    protected function generateUuidV7(): string
     {
-        return Uuid::uuid4()->toString();
+        return Uuid::uuid7()->toString();
     }
 
     protected function parentPath(string $fieldPath): string
