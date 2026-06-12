@@ -264,6 +264,46 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $this->assertStringContainsString('nao foi encontrado nas escolhas dinamicas', $expected->errors()[0]['message']);
     }
 
+    #[Test]
+    public function pipelineShouldFillMissingUuidFieldsWhenPathIsDeclared(): void
+    {
+        $pipeline = new class extends DataCollectionSpreadsheetReviewPipeline {
+            public function seed(array $data): self
+            {
+                $this->data_collection = $data;
+                $this->data_collection_prepared = false;
+
+                return $this;
+            }
+        };
+
+        $existingUuid = '019eae51-20fc-72f8-a380-f1c31f9391f6';
+        $input = [[
+            'coletor' => [
+                [
+                    'coletor/nome' => 'Ana',
+                ],
+                [
+                    'coletor/nome' => 'Bruno',
+                    'coletor/uuid' => $existingUuid,
+                ],
+            ],
+        ]];
+
+        $result = $pipeline
+            ->seed($input)
+            ->fillMissingUuidFields(['coletor/uuid'])
+            ->process();
+
+        $this->assertArrayHasKey('coletor/uuid', $result[0]['coletor'][0]);
+        $this->assertArrayHasKey('coletor/uuid', $result[0]['coletor'][1]);
+        $this->assertMatchesRegularExpression(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
+            $result[0]['coletor'][0]['coletor/uuid'],
+        );
+        $this->assertSame($existingUuid, $result[0]['coletor'][1]['coletor/uuid']);
+    }
+
     private function formExampleImagesJson(): array
     {
         return json_decode(
