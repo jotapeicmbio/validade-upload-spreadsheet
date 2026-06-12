@@ -25,7 +25,8 @@ O pacote cobre o fluxo abaixo:
 4. Valida campos obrigatórios, regras XPath, escolhas e tipos.
 5. Resolve escolhas dinâmicas.
 6. Calcula campos derivados, como `uuid()`.
-7. Gera XML final para cada coleta.
+7. Preenche UUIDs faltantes em caminhos declarados.
+8. Gera XML final para cada coleta.
 
 ## Fluxo recomendado
 
@@ -38,6 +39,7 @@ use Icmbio\ValidateRegister\DataCollectionSpreadsheetReviewPipeline;
 
 $reviewPipeline = (new DataCollectionSpreadsheetReviewPipeline())
     ->setDataCollection(__DIR__ . '/planilha.xlsx')
+    ->fillMissingUuidFields(['coletor/uuid'])
     ->validateCollectionFromJson($formDefinition, $dynamicChoices)
     ->validateCollection();
 
@@ -237,6 +239,7 @@ $files = (new DataCollectionSpreadsheetConvertPipeline())
 
 - `setDataCollection(string $path)`
 - `transform(string|callable $fn, DataCollectionSelectorKey $selectorKey = DataCollectionSelectorKey::NAME, array $keys = [])`
+- `fillMissingUuidFields(array $paths)`
 - `validateCollectionFromJson(array $formDefinition = [], array $dynamicChoices = [])`
 - `validateCollection()`
 - `process(): array`

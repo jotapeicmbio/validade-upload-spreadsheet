@@ -7,6 +7,7 @@ namespace Icmbio\ValidateRegister;
 use Icmbio\ValidateRegister\Enums\DataCollectionSelectorKey;
 use Icmbio\ValidateRegister\Validator\StructureSpreadsheetData;
 use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 
 class DataCollectionSpreadsheetReviewPipeline
 {
@@ -15,6 +16,7 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $errors = [];
     protected array $dynamic_choices = [];
     protected array $form_definition = [];
+    protected array $uuid_field_paths = [];
     protected bool $data_collection_prepared = false;
 
     public function setDataCollection(string $path): self
@@ -46,6 +48,32 @@ class DataCollectionSpreadsheetReviewPipeline
             }
         }
 
+        $this->data_collection_prepared = false;
+
+        return $this;
+    }
+
+    /**
+     * @param array<int, string> $paths
+     */
+    public function fillMissingUuidFields(array $paths): self
+    {
+        $normalizedPaths = [];
+
+        foreach ($paths as $path) {
+            if (! is_string($path)) {
+                continue;
+            }
+
+            $path = trim($path);
+            if ($path === '') {
+                continue;
+            }
+
+            $normalizedPaths[] = $path;
+        }
+
+        $this->uuid_field_paths = array_values(array_unique($normalizedPaths));
         $this->data_collection_prepared = false;
 
         return $this;
@@ -173,7 +201,115 @@ class DataCollectionSpreadsheetReviewPipeline
         $this->data_collection = $this->sanitizeCollectionValues($this->data_collection);
         $this->data_collection = $this->resolveDynamicChoices($this->data_collection);
         $this->data_collection = $this->castCollectionValues($this->data_collection);
+        $this->data_collection = $this->fillMissingUuidValues($this->data_collection);
         $this->data_collection_prepared = true;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $collections
+     * @return list<array<string, mixed>>
+     */
+    protected function fillMissingUuidValues(array $collections): array
+    {
+        if ($this->uuid_field_paths === []) {
+            return $collections;
+        }
+
+        foreach ($collections as $index => $collection) {
+            if (! is_array($collection)) {
+                continue;
+            }
+
+            $collections[$index] = $this->fillMissingUuidValuesInNode($collection);
+        }
+
+        return $collections;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @return array<string, mixed>
+     */
+    protected function fillMissingUuidValuesInNode(array $node): array
+    {
+        foreach ($this->uuid_field_paths as $uuidFieldPath) {
+            $node = $this->fillMissingUuidValueAtPath($node, $uuidFieldPath);
+        }
+
+        foreach ($node as $fieldName => $fieldValue) {
+            if (! is_array($fieldValue)) {
+                continue;
+            }
+
+            if (array_is_list($fieldValue)) {
+                foreach ($fieldValue as $childIndex => $childValue) {
+                    if (! is_array($childValue)) {
+                        continue;
+                    }
+
+                    $fieldValue[$childIndex] = $this->fillMissingUuidValuesInNode($childValue);
+                }
+
+                $node[$fieldName] = $fieldValue;
+
+                continue;
+            }
+
+            $node[$fieldName] = $this->fillMissingUuidValuesInNode($fieldValue);
+        }
+
+        return $node;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     * @return array<string, mixed>
+     */
+    protected function fillMissingUuidValueAtPath(array $node, string $uuidFieldPath): array
+    {
+        if (array_key_exists($uuidFieldPath, $node)) {
+            if (! $this->hasValue($node[$uuidFieldPath])) {
+                $node[$uuidFieldPath] = $this->generateUuidV7();
+            }
+
+            return $node;
+        }
+
+        $fieldPrefix = $this->parentPath($uuidFieldPath);
+        if ($fieldPrefix === '') {
+            return $node;
+        }
+
+        if ($this->nodeHasDirectFieldPrefix($node, $fieldPrefix)) {
+            $node[$uuidFieldPath] = $this->generateUuidV7();
+        }
+
+        return $node;
+    }
+
+    /**
+     * @param array<string, mixed> $node
+     */
+    protected function nodeHasDirectFieldPrefix(array $node, string $fieldPrefix): bool
+    {
+        $prefix = rtrim($fieldPrefix, '/') . '/';
+
+        foreach ($node as $fieldName => $_fieldValue) {
+            if (! is_string($fieldName)) {
+                continue;
+            }
+
+            if (str_starts_with($fieldName, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function generateUuidV7(): string
+    {
+        return Uuid::uuid7()->toString();
     }
 
     protected function sanitizeCollectionValues(array $collections): array
@@ -319,6 +455,31 @@ class DataCollectionSpreadsheetReviewPipeline
         }
 
         return $fieldValue;
+    }
+
+    protected function parentPath(string $fieldPath): string
+    {
+        $segments = explode('/', $fieldPath);
+        array_pop($segments);
+
+        return implode('/', $segments);
+    }
+
+    protected function hasValue(mixed $value): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+
+        if (is_string($value) && trim($value) === '') {
+            return false;
+        }
+
+        if (is_array($value) && $value === []) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function resolveDynamicChoices(array $collections): array
