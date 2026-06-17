@@ -112,23 +112,37 @@ class ValidateCollectionData
     {
         $context = [];
 
-        foreach ($data as $key => $value) {
-            if (is_array($value) && array_is_list($value)) {
-                continue;
-            }
-            $context[$this->lastSegment((string) $key)] = $value;
+        if ($parentContext !== null) {
+            $this->flattenContextValues($parentContext, $context);
         }
 
-        if ($parentContext !== null) {
-            foreach ($parentContext as $key => $value) {
-                if (is_array($value) && array_is_list($value)) {
-                    continue;
-                }
-                $context[$this->lastSegment((string) $key)] = $value;
-            }
-        }
+        $this->flattenContextValues($data, $context);
 
         return $context;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $context
+     */
+    protected function flattenContextValues(array $data, array &$context): void
+    {
+        foreach ($data as $key => $value) {
+            $normalizedKey = $this->lastSegment((string) $key);
+
+            if (is_array($value)) {
+                if (array_is_list($value)) {
+                    continue;
+                }
+
+                $context[$normalizedKey] = $value;
+                $this->flattenContextValues($value, $context);
+
+                continue;
+            }
+
+            $context[$normalizedKey] = $value;
+        }
     }
 
     /**

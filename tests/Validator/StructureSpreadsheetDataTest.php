@@ -26,7 +26,7 @@ class StructureSpreadsheetDataTest extends TestCase
             [null, null, null, 'T002', '12'],
         ];
 
-        $actual = (new StructureSpreadsheetData($input))
+        $actual = (new StructureSpreadsheetData($input, ['individuos_registro']))
             ->estruture()
             ->toArray();
 

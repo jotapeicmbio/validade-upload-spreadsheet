@@ -4,6 +4,7 @@
 
 namespace Icmbio\SrcPhp\Tests\Unit;
 
+use Icmbio\ValidateRegister\CreateValidatorsStructure;
 use Icmbio\ValidateRegister\ValidateCollectionData;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -244,5 +245,84 @@ final class ValidateCollectionDataTest extends TestCase
         self::assertCount(1, $errors);
         self::assertSame('coletor', $errors[0]['key']);
         self::assertStringContainsString('Nao e permitido entrar com valores para este grupo', $errors[0]['message']);
+    }
+
+    #[Test]
+    public function preserva_relevant_em_campo_condicional_dentro_de_repeat(): void
+    {
+        $validators = CreateValidatorsStructure::build($this->xformLikeProducaoRegistroNode());
+
+        self::assertSame(
+            "../grupo_captura ='outro'",
+            $validators['producao_registro/outro_grupo_captura']['relevant'],
+        );
+        self::assertSame('true()', $validators['producao_registro/grupo_captura']['required']);
+        self::assertSame('true()', $validators['producao_registro/especie_captura']['required']);
+    }
+
+    #[Test]
+    public function nao_exige_outro_grupo_captura_quando_grupo_captura_nao_e_outro(): void
+    {
+        $validators = CreateValidatorsStructure::build($this->xformLikeProducaoRegistroNode());
+
+        $data = [
+            'producao_registro' => [
+                [
+                    'grupo_captura' => 'piranha',
+                    'outro_grupo_captura' => null,
+                    'especie_captura' => 'piranha',
+                    'outro_especie_captura' => null,
+                ],
+            ],
+        ];
+
+        $errors = ValidateCollectionData::createErrorsList($data, $validators);
+
+        self::assertSame([], $errors);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function xformLikeProducaoRegistroNode(): array
+    {
+        return [
+            [
+                'name' => 'producao_registro',
+                'type' => 'repeat',
+                'children' => [
+                    [
+                        'name' => 'grupo_captura',
+                        'type' => 'select1',
+                        'bind' => [
+                            'required' => 'true()',
+                        ],
+                    ],
+                    [
+                        'name' => 'outro_grupo_captura',
+                        'type' => 'text',
+                        'bind' => [
+                            'relevant' => "../grupo_captura ='outro'",
+                            'required' => 'true()',
+                        ],
+                    ],
+                    [
+                        'name' => 'especie_captura',
+                        'type' => 'select1',
+                        'bind' => [
+                            'required' => 'true()',
+                        ],
+                    ],
+                    [
+                        'name' => 'outro_especie_captura',
+                        'type' => 'text',
+                        'bind' => [
+                            'relevant' => "../especie_captura ='outro'",
+                            'required' => 'true()',
+                        ],
+                    ],
+                ],
+            ],
+        ];
     }
 }

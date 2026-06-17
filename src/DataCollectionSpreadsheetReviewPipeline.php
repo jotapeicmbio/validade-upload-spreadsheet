@@ -17,6 +17,7 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $dynamic_choices = [];
     protected array $form_definition = [];
     protected array $uuid_field_paths = [];
+    protected array $repeat_group_keys = [];
     protected bool $data_collection_prepared = false;
 
     public function setDataCollection(string $path): self
@@ -79,6 +80,17 @@ class DataCollectionSpreadsheetReviewPipeline
         return $this;
     }
 
+    public function collection(): array
+    {
+        if ($this->shouldStructureDataCollection()) {
+            return (new StructureSpreadsheetData($this->data_collection, $this->repeat_group_keys))
+                ->estruture()
+                ->toArray();
+        }
+
+        return $this->data_collection;
+    }
+
     public function process(): array
     {
         $this->prepareDataCollection();
@@ -112,6 +124,7 @@ class DataCollectionSpreadsheetReviewPipeline
         $this->form_definition = $formDefinition;
         $this->dynamic_choices = $dynamicChoices;
         $this->validators = CreateValidatorsStructure::build($formDefinition['children'] ?? [], $dynamicChoices);
+        $this->repeat_group_keys = $this->extractRepeatGroupKeys($formDefinition['children'] ?? []);
 
         return $this;
     }
@@ -185,6 +198,36 @@ class DataCollectionSpreadsheetReviewPipeline
         return is_array($firstRow) && array_is_list($firstRow);
     }
 
+    /**
+     * @param array<int, mixed> $nodes
+     * @return array<int, string>
+     */
+    protected function extractRepeatGroupKeys(array $nodes): array
+    {
+        $repeatGroupKeys = [];
+
+        foreach ($nodes as $node) {
+            if (! is_array($node)) {
+                continue;
+            }
+
+            $name = (string) ($node['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+
+            if (($node['type'] ?? null) === 'repeat') {
+                $repeatGroupKeys[] = $name;
+            }
+
+            if (isset($node['children']) && is_array($node['children'])) {
+                $repeatGroupKeys = array_merge($repeatGroupKeys, $this->extractRepeatGroupKeys($node['children']));
+            }
+        }
+
+        return array_values(array_unique($repeatGroupKeys));
+    }
+
     protected function prepareDataCollection(): void
     {
         if ($this->data_collection_prepared) {
@@ -192,7 +235,7 @@ class DataCollectionSpreadsheetReviewPipeline
         }
 
         if ($this->shouldStructureDataCollection()) {
-            $this->data_collection = (new StructureSpreadsheetData($this->data_collection))
+            $this->data_collection = (new StructureSpreadsheetData($this->data_collection, $this->repeat_group_keys))
                 ->estruture()
                 ->toArray();
         }

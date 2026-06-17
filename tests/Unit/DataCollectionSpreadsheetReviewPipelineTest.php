@@ -57,6 +57,94 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     }
 
     #[Test]
+    public function pipelineShouldKeepOneRegisterWhenRepeatIsDeclaredInXform(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            [
+                'campo_1',
+                'campo_2',
+                'grupo_1/campo_1',
+                'grupo_1/grupo_campo_1',
+                'grupo_1/biometria_registro/comprimento_total_cm',
+            ],
+            [
+                'Campo 1',
+                'Campo 2',
+                'Grupo 1',
+                'Grupo campo 1',
+                'Comprimento',
+            ],
+            ['registro_1', 'base_1', 'grupo_1_a', 'grupo_campo_1_a', 18],
+            [null, null, null, null, 17],
+            [null, null, null, null, 23],
+            [null, null, null, null, 19],
+        ]);
+
+        $result = $pipeline
+            ->validateCollectionFromJson($this->repeatFormDefinition())
+            ->collection();
+
+        $this->assertCount(1, $result);
+        $this->assertSame('registro_1', $result[0]['campo_1']);
+        $this->assertSame('base_1', $result[0]['campo_2']);
+        $this->assertCount(4, $result[0]['grupo_1']);
+        $this->assertSame('grupo_1_a', $result[0]['grupo_1'][0]['grupo_1/campo_1']);
+        $this->assertSame('grupo_campo_1_a', $result[0]['grupo_1'][0]['grupo_1/grupo_campo_1']);
+        $this->assertCount(1, $result[0]['grupo_1'][0]['biometria_registro']);
+        $this->assertSame(
+            18,
+            $result[0]['grupo_1'][0]['biometria_registro'][0]['grupo_1/biometria_registro/comprimento_total_cm'],
+        );
+        $this->assertSame(
+            19,
+            $result[0]['grupo_1'][3]['biometria_registro'][0]['grupo_1/biometria_registro/comprimento_total_cm'],
+        );
+    }
+
+    #[Test]
+    public function pipelineShouldExposeStructuredCollectionBeforeProcessing(): void
+    {
+        $expected = [
+            [
+                'uc' => 'Estação Ecológica da Terra do Meio',
+                'estacao_amostral' => 'EA-001 Teste',
+                'unidade_amostral' => 'UA-001 Teste',
+                'tipo' => 'esec',
+                'check_point' => 18,
+                'img_one' => null,
+                'img_two' => null,
+                'meta' => ['instanceID' => null],
+            ],
+            [
+                'uc' => 'Floresta Nacional de Brasília',
+                'estacao_amostral' => 'EA-002 Teste',
+                'unidade_amostral' => 'UA-002 Teste',
+                'tipo' => 'flona',
+                'check_point' => 18,
+                'img_one' => null,
+                'img_two' => null,
+                'meta' => ['instanceID' => null],
+            ],
+            [
+                'uc' => 'Reserva Extrativista do Tapajós',
+                'estacao_amostral' => 'EA-003 Teste',
+                'unidade_amostral' => 'UA-003 Teste',
+                'tipo' => 'resex',
+                'check_point' => 18,
+                'img_one' => null,
+                'img_two' => null,
+                'meta' => ['instanceID' => null],
+            ],
+        ];
+
+        $result = (new DataCollectionSpreadsheetReviewPipeline())
+            ->setDataCollection($this->planilha_path)
+            ->collection();
+
+        $this->assertEquals($expected, $result);
+    }
+
+    #[Test]
     public function pipelineShouldTransformTheCollectionWhenAFfunctionIsPassedToIt(): void
     {
         $expected = [
@@ -351,6 +439,52 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
                 ['label' => 'UA-001 Teste', 'name' => 2001],
                 ['label' => 'UA-002 Teste', 'name' => 2002],
                 ['label' => 'UA-003 Teste', 'name' => 2003],
+            ],
+        ];
+    }
+
+    /**
+     * @param array<int, array<int, mixed>> $worksheet
+     */
+    private function makePipelineWithSpreadsheet(array $worksheet): DataCollectionSpreadsheetReviewPipeline
+    {
+        $pipeline = new DataCollectionSpreadsheetReviewPipeline();
+        $reflection = new ReflectionClass($pipeline);
+        $property = $reflection->getProperty('data_collection');
+        $property->setAccessible(true);
+        $property->setValue($pipeline, $worksheet);
+
+        $preparedProperty = $reflection->getProperty('data_collection_prepared');
+        $preparedProperty->setAccessible(true);
+        $preparedProperty->setValue($pipeline, false);
+
+        return $pipeline;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function repeatFormDefinition(): array
+    {
+        return [
+            'children' => [
+                ['name' => 'campo_1', 'type' => 'text'],
+                ['name' => 'campo_2', 'type' => 'text'],
+                [
+                    'name' => 'grupo_1',
+                    'type' => 'repeat',
+                    'children' => [
+                        ['name' => 'campo_1', 'type' => 'text'],
+                        ['name' => 'grupo_campo_1', 'type' => 'text'],
+                        [
+                            'name' => 'biometria_registro',
+                            'type' => 'repeat',
+                            'children' => [
+                                ['name' => 'comprimento_total_cm', 'type' => 'decimal'],
+                            ],
+                        ],
+                    ],
+                ],
             ],
         ];
     }

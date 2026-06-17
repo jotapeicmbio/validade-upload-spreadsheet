@@ -12,13 +12,25 @@ class StructureSpreadsheetData
     protected array $worksheet = [];
     /** @var array<int, string> */
     protected array $headers = [];
+    /** @var array<string, true> */
+    protected array $repeatGroupKeys = [];
     protected bool $shouldStructure = false;
 
-    /** @param array<int, array<int, mixed>> $worksheet */
-    public function __construct(array $worksheet)
+    /**
+     * @param array<int, array<int, mixed>> $worksheet
+     * @param array<int, string> $repeatGroupKeys
+     */
+    public function __construct(array $worksheet, array $repeatGroupKeys = [])
     {
         $this->worksheet = array_values($worksheet);
         $this->headers = $this->worksheet[0] ?? [];
+        foreach ($repeatGroupKeys as $groupKey) {
+            if (! is_string($groupKey) || $groupKey === '') {
+                continue;
+            }
+
+            $this->repeatGroupKeys[$groupKey] = true;
+        }
     }
 
     public function estruture(): self
@@ -263,7 +275,17 @@ class StructureSpreadsheetData
             return $this->buildSingleGroupItem($columns);
         }
 
-        return $this->buildGroupedItems($columns, $groupKey);
+        $items = $this->buildGroupedItems($columns, $groupKey);
+
+        if ($this->isRepeatGroup($groupKey)) {
+            return $items;
+        }
+
+        if ($this->shouldCollapseGroupedItems($items)) {
+            return $this->collapseGroupedItems($items);
+        }
+
+        return $items;
     }
 
     /**
@@ -281,6 +303,7 @@ class StructureSpreadsheetData
         }
 
         $items = [];
+        $previousItem = null;
 
         for ($index = 0; $index < $itemCount; $index++) {
             $item = [];
@@ -293,9 +316,11 @@ class StructureSpreadsheetData
             }
 
             $item = $this->normalizeNestedRepeatItem($item, $groupKey);
+            $item = $this->propagateRepeatItemValues($item, $previousItem, $groupKey);
 
             if ($this->itemHasValue($item)) {
                 $items[] = $item;
+                $previousItem = $item;
             }
         }
 
@@ -421,5 +446,177 @@ class StructureSpreadsheetData
         }
 
         return $normalized;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @param array<string, mixed>|null $previousItem
+     * @return array<string, mixed>
+     */
+    protected function propagateRepeatItemValues(array $item, ?array $previousItem, string $groupKey): array
+    {
+        if ($previousItem === null || ! $this->isRepeatGroup($groupKey)) {
+            return $item;
+        }
+
+        foreach ($item as $fieldPath => $value) {
+            if (! is_string($fieldPath)) {
+                continue;
+            }
+
+            if (str_contains($fieldPath, '/')) {
+                continue;
+            }
+
+            if (! $this->isEmptyCell($value)) {
+                continue;
+            }
+
+            $previousValue = $previousItem[$fieldPath] ?? null;
+            if (! $this->isEmptyCell($previousValue)) {
+                $item[$fieldPath] = $previousValue;
+            }
+        }
+
+        return $item;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     */
+    protected function shouldCollapseGroupedItems(array $items): bool
+    {
+        if (count($items) <= 1) {
+            return false;
+        }
+
+        $referenceItem = $items[0];
+        $nestedRepeatKeys = $this->collectNestedRepeatKeys($items);
+
+        if ($nestedRepeatKeys === []) {
+            return false;
+        }
+
+        foreach ($items as $item) {
+            foreach ($item as $fieldPath => $value) {
+                if (isset($nestedRepeatKeys[$fieldPath])) {
+                    continue;
+                }
+
+                if (! array_key_exists($fieldPath, $referenceItem) || $referenceItem[$fieldPath] !== $value) {
+                    return false;
+                }
+            }
+
+            foreach ($referenceItem as $fieldPath => $value) {
+                if (isset($nestedRepeatKeys[$fieldPath])) {
+                    continue;
+                }
+
+                if (! array_key_exists($fieldPath, $item) || $item[$fieldPath] !== $value) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     * @return array<string, mixed>
+     */
+    protected function collapseGroupedItems(array $items): array
+    {
+        $collapsed = $items[0];
+        $nestedRepeatKeys = $this->collectNestedRepeatKeys($items);
+
+        foreach ($items as $item) {
+            foreach ($item as $fieldPath => $value) {
+                if (! $this->isNestedRepeatValue($value)) {
+                    continue;
+                }
+
+                $collapsed[$fieldPath] = array_merge($collapsed[$fieldPath] ?? [], $value);
+            }
+        }
+
+        foreach ($nestedRepeatKeys as $fieldPath => $_) {
+            if (! isset($collapsed[$fieldPath])) {
+                $collapsed[$fieldPath] = [];
+            }
+
+            $collapsed[$fieldPath] = $this->deduplicateNestedRepeatRows($collapsed[$fieldPath]);
+        }
+
+        return $collapsed;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     * @return array<string, true>
+     */
+    protected function collectNestedRepeatKeys(array $items): array
+    {
+        $nestedRepeatKeys = [];
+
+        foreach ($items as $item) {
+            foreach ($item as $fieldPath => $value) {
+                if ($this->isNestedRepeatValue($value)) {
+                    $nestedRepeatKeys[$fieldPath] = true;
+                }
+            }
+        }
+
+        return $nestedRepeatKeys;
+    }
+
+    /**
+     * @param array<int, array<string, mixed>>|array<int, mixed> $rows
+     * @return array<int, array<string, mixed>>
+     */
+    protected function deduplicateNestedRepeatRows(array $rows): array
+    {
+        $deduplicated = [];
+        $seen = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $signature = json_encode($row, JSON_THROW_ON_ERROR);
+            if (isset($seen[$signature])) {
+                continue;
+            }
+
+            $seen[$signature] = true;
+            $deduplicated[] = $row;
+        }
+
+        return $deduplicated;
+    }
+
+    protected function isRepeatGroup(string $groupKey): bool
+    {
+        return isset($this->repeatGroupKeys[$groupKey]);
+    }
+
+    /**
+     * @param mixed $value
+     */
+    protected function isNestedRepeatValue(mixed $value): bool
+    {
+        if (! is_array($value) || ! array_is_list($value) || $value === []) {
+            return false;
+        }
+
+        foreach ($value as $item) {
+            if (is_array($item)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
