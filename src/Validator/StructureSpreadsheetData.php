@@ -14,7 +14,10 @@ class StructureSpreadsheetData
     protected array $headers = [];
     /** @var array<string, true> */
     protected array $repeatGroupKeys = [];
+    /** @var array<int, int> */
+    protected array $structuredRowLines = [];
     protected bool $shouldStructure = false;
+    protected int $currentNormalizedRowLine = 0;
 
     /**
      * @param array<int, array<int, mixed>> $worksheet
@@ -50,6 +53,18 @@ class StructureSpreadsheetData
         return $this->output();
     }
 
+    /**
+     * @return array<int, int>
+     */
+    public function structuredRowLines(): array
+    {
+        if ($this->shouldStructure && $this->structuredRowLines === []) {
+            iterator_to_array($this->structuredCollections(), false);
+        }
+
+        return $this->structuredRowLines;
+    }
+
     /** @return array<int, array<int, mixed>> */
     public function output(): array
     {
@@ -64,7 +79,9 @@ class StructureSpreadsheetData
     {
         $rows = array_slice($this->worksheet, 2);
         $currentModel = null;
+        $currentModelLine = null;
         $numCols = count($this->headers);
+        $lineNumber = 3;
 
         foreach ($rows as $row) {
             $row = array_pad($row, $numCols, null);
@@ -72,21 +89,27 @@ class StructureSpreadsheetData
 
             if ($isModel) {
                 if ($currentModel !== null) {
+                    $this->currentNormalizedRowLine = $currentModelLine ?? 0;
                     yield $currentModel;
                 }
 
                 $currentModel = $row;
+                $currentModelLine = $lineNumber;
+                $lineNumber++;
                 continue;
             }
 
             if ($currentModel === null) {
+                $lineNumber++;
                 continue;
             }
 
             $currentModel = $this->mergeRow($currentModel, $row);
+            $lineNumber++;
         }
 
         if ($currentModel !== null) {
+            $this->currentNormalizedRowLine = $currentModelLine ?? 0;
             yield $currentModel;
         }
     }
@@ -109,6 +132,7 @@ class StructureSpreadsheetData
     protected function structuredCollections(): Generator
     {
         foreach ($this->normalizedRows() as $row) {
+            $this->structuredRowLines[] = $this->currentNormalizedRowLine;
             yield $this->structureRow($row);
         }
     }

@@ -205,6 +205,15 @@ class XformXmlBuilder
 
     protected function normalizeDecimalValue(mixed $value): mixed
     {
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value === '') {
+                return $value;
+            }
+
+            $value = str_replace(',', '.', $value);
+        }
+
         if (! is_numeric($value)) {
             return $value;
         }

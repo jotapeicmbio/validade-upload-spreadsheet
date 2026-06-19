@@ -269,6 +269,24 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     }
 
     #[Test]
+    public function pipelineShouldNormalizeDecimalCommaToPoint(): void
+    {
+        $result = $this->makePipelineWithSpreadsheet([
+            ['decimal_field'],
+            ['Decimal field'],
+            ['5,5'],
+        ])
+            ->validateCollectionFromJson([
+                'children' => [
+                    ['name' => 'decimal_field', 'type' => 'decimal'],
+                ],
+            ])
+            ->process();
+
+        $this->assertSame('5.5', $result[0]['decimal_field']);
+    }
+
+    #[Test]
     public function pipelineShouldResolveDynamicChoicesToIdsWhenProcessingCollection(): void
     {
         $expected = [

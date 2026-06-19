@@ -131,6 +131,25 @@ class StructureSpreadsheetDataTest extends TestCase
     }
 
     #[Test]
+    public function devePreservarAsLinhasFisicasDosRegistrosEstruturados(): void
+    {
+        $input = [
+            ['id', 'grupo/campo'],
+            ['Label id', 'Label campo'],
+            ['registro_1', 'valor_1'],
+            [null, 'valor_2'],
+            ['registro_2', 'valor_3'],
+        ];
+
+        $structure = (new StructureSpreadsheetData($input))
+            ->estruture();
+
+        $actual = $structure->structuredRowLines();
+
+        $this->assertSame([3, 5], $actual);
+    }
+
+    #[Test]
     public function deveRetornarUmaListaDeColetasComGrupos(): void
     {
         $input = [

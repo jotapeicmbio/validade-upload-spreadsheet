@@ -284,13 +284,15 @@ final class LocalFullPipelineIntegrationTest extends TestCase
         $lines = ["Validation errors:"];
 
         foreach ($errors as $error) {
+            $line = $error['line'] ?? ($error['index'] ?? '?');
             $index = $error['index'] ?? '?';
             $key = (string) ($error['key'] ?? '?');
             $value = $this->stringifyErrorValue($error['value'] ?? null);
             $message = (string) ($error['message'] ?? 'Unknown error');
 
             $lines[] = sprintf(
-                '[index=%s] key=%s value=%s message=%s',
+                '[line=%s index=%s] key=%s value=%s message=%s',
+                (string) $line,
                 (string) $index,
                 $key,
                 $value,

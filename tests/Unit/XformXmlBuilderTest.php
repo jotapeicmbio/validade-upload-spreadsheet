@@ -144,4 +144,32 @@ final class XformXmlBuilderTest extends TestCase
             $xpath->evaluate('string(/xml/individuos_registro/troncos_registro/troncos_uuid)'),
         );
     }
+
+    public function test_build_should_normalize_decimal_comma_to_point(): void
+    {
+        $data = ['campo_decimal' => '5,5'];
+        $keys = ['campo_decimal'];
+        $formDefinition = [
+            'children' => [
+                ['name' => 'campo_decimal', 'type' => 'decimal'],
+            ],
+        ];
+
+        $xml = XformXmlBuilder::build(
+            $data,
+            $keys,
+            'xml',
+            'xml_id',
+            '1.0',
+            null,
+            '2026-04-01T10:20:30.000-03:00',
+            $formDefinition,
+        );
+
+        $doc = new DOMDocument();
+        $doc->loadXML($xml);
+        $xpath = new DOMXPath($doc);
+
+        self::assertSame('5.5', $xpath->evaluate('string(/xml/campo_decimal)'));
+    }
 }

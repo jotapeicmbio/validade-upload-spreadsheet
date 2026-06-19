@@ -10,6 +10,7 @@ class ValidateCollectionData
 {
     private const INVALID_CHOICE_MESSAGE = 'O Valor (%s) nao e uma das escolhas validas: %s';
     private const INVALID_EXPRESSION_MESSAGE = 'Erro ao validar a expressao ("%s") [%s]';
+    private const SPREADSHEET_DATA_START_LINE = 3;
 
     public function __construct() {}
 
@@ -26,9 +27,10 @@ class ValidateCollectionData
         int $index = 0,
         ?array $parentContext = null,
         ?array $taxons = null,
+        ?int $sourceLine = null,
     ): array {
 
-        return (new self())->collectErrors($data, $validators, $index, $parentContext, $taxons);
+        return (new self())->collectErrors($data, $validators, $index, $parentContext, $taxons, $sourceLine);
     }
 
     /**
@@ -44,9 +46,11 @@ class ValidateCollectionData
         int $index,
         ?array $parentContext,
         ?array $taxons,
+        ?int $sourceLine = null,
     ): array {
         $errors = [];
         $context = $this->buildContext($data, $parentContext);
+        $sourceLine ??= $this->extractSourceLine($data) ?? $this->spreadsheetLineFromIndex($index);
 
         foreach ($data as $fieldKey => $fieldValue) {
             if (! array_key_exists($fieldKey, $validators)) {
@@ -58,18 +62,18 @@ class ValidateCollectionData
 
             if ($fieldType === 'calculate' && str_ends_with($fieldKey, 'uuid') && $this->hasValue($fieldValue)) {
                 if (! $this->isValidUuid((string) $fieldValue)) {
-                    $errors[] = $this->buildError($index, $fieldKey, $fieldValue, 'UUID invalido.');
+                    $errors[] = $this->buildError($index, $fieldKey, $fieldValue, 'UUID invalido.', $sourceLine);
                 }
             }
 
             if ($fieldType === 'integer' && $this->hasValue($fieldValue) && ! $this->isValidIntegerValue($fieldValue)) {
-                $errors[] = $this->buildError($index, $fieldKey, $fieldValue, 'E esperado um valor inteiro.');
+                $errors[] = $this->buildError($index, $fieldKey, $fieldValue, 'E esperado um valor inteiro.', $sourceLine);
             }
 
             if ($fieldType === 'repeat' && $this->isRepeatGroupValue($fieldValue)) {
                 $errors = array_merge(
                     $errors,
-                    $this->validateRepeatGroup($fieldKey, $fieldValue, $fieldValidator, $validators, $index, $context, $taxons),
+                    $this->validateRepeatGroup($fieldKey, $fieldValue, $fieldValidator, $validators, $index, $context, $taxons, $sourceLine),
                 );
 
                 continue;
@@ -77,7 +81,7 @@ class ValidateCollectionData
 
             $errors = array_merge(
                 $errors,
-                $this->validateScalarField($fieldKey, $fieldValue, $fieldValidator, $context, $index, $taxons),
+                $this->validateScalarField($fieldKey, $fieldValue, $fieldValidator, $context, $index, $taxons, $sourceLine),
             );
         }
 
@@ -159,6 +163,7 @@ class ValidateCollectionData
         array $context,
         int $index,
         ?array $taxons,
+        ?int $sourceLine = null,
     ): array {
         $errors = [];
         $mustValidateConstraint = true;
@@ -175,6 +180,7 @@ class ValidateCollectionData
                 $fieldKey,
                 $fieldValue,
                 sprintf(self::INVALID_EXPRESSION_MESSAGE, $relevanceExpression, $exception->getMessage()),
+                $sourceLine,
             );
 
             return $errors;
@@ -190,6 +196,7 @@ class ValidateCollectionData
                     $fieldKey,
                     $fieldValue,
                     (string) ($fieldValidator['required_message'] ?? 'Campo obrigatorio'),
+                    $sourceLine,
                 );
             }
         } catch (\Throwable $exception) {
@@ -198,6 +205,7 @@ class ValidateCollectionData
                 $fieldKey,
                 $fieldValue,
                 sprintf(self::INVALID_EXPRESSION_MESSAGE, $requiredExpression, $exception->getMessage()),
+                $sourceLine,
             );
         }
 
@@ -211,6 +219,7 @@ class ValidateCollectionData
                         $fieldKey,
                         $fieldValue,
                         (string) ($fieldValidator['constraint_message'] ?? 'Erro'),
+                        $sourceLine,
                     );
                 }
             }
@@ -220,6 +229,7 @@ class ValidateCollectionData
                 $fieldKey,
                 $fieldValue,
                 sprintf(self::INVALID_EXPRESSION_MESSAGE, $constraintExpression, $exception->getMessage()),
+                $sourceLine,
             );
         }
 
@@ -252,6 +262,7 @@ class ValidateCollectionData
         int $index,
         array $context,
         ?array $taxons,
+        ?int $sourceLine = null,
     ): array {
         $errors = [];
         $relevanceExpression = (string) ($fieldValidator['relevant'] ?? 'true()');
@@ -264,6 +275,7 @@ class ValidateCollectionData
                 $fieldKey,
                 $fieldValue,
                 sprintf(self::INVALID_EXPRESSION_MESSAGE, $relevanceExpression, $exception->getMessage()),
+                $sourceLine,
             );
 
             return $errors;
@@ -278,7 +290,7 @@ class ValidateCollectionData
                 }
                 $errors = array_merge(
                     $errors,
-                    $this->collectErrors($childNode, $validators, $runningIndex, $context, $taxons),
+                    $this->collectErrors($childNode, $validators, $runningIndex, $context, $taxons, $sourceLine),
                 );
             }
 
@@ -294,6 +306,7 @@ class ValidateCollectionData
                     'Nao e permitido entrar com valores para este grupo, pois nao atendeu o criterio %s',
                     $relevanceExpression,
                 ),
+                $sourceLine,
             );
         }
 
@@ -389,16 +402,38 @@ class ValidateCollectionData
     }
 
     /**
-     * @return array{index: int, key: string, value: mixed, message: string}
+     * @return array{index: int, line: int, key: string, value: mixed, message: string}
      */
-    protected function buildError(int $index, string $fieldKey, mixed $fieldValue, string $message): array
+    protected function buildError(
+        int $index,
+        string $fieldKey,
+        mixed $fieldValue,
+        string $message,
+        ?int $sourceLine = null,
+    ): array
     {
         return [
             'index' => $index,
+            'line' => $sourceLine ?? $this->spreadsheetLineFromIndex($index),
             'key' => $fieldKey,
             'value' => $fieldValue,
             'message' => $message,
         ];
+    }
+
+    protected function spreadsheetLineFromIndex(int $index): int
+    {
+        return $index + self::SPREADSHEET_DATA_START_LINE;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    protected function extractSourceLine(array $data): ?int
+    {
+        $sourceLine = $data['__line'] ?? null;
+
+        return is_int($sourceLine) && $sourceLine > 0 ? $sourceLine : null;
     }
 
     protected function hasValue(mixed $value): bool

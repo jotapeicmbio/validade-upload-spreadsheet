@@ -11,6 +11,8 @@ use Ramsey\Uuid\Uuid;
 
 class DataCollectionSpreadsheetReviewPipeline
 {
+    private const SPREADSHEET_DATA_START_LINE = 3;
+
     protected array $data_collection = [];
     protected array $validators = [];
     protected array $errors = [];
@@ -18,6 +20,7 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $form_definition = [];
     protected array $uuid_field_paths = [];
     protected array $repeat_group_keys = [];
+    protected array $structured_row_lines = [];
     protected bool $data_collection_prepared = false;
 
     public function setDataCollection(string $path): self
@@ -108,9 +111,10 @@ class DataCollectionSpreadsheetReviewPipeline
                 continue;
             }
 
+            $sourceLine = $this->structured_row_lines[$index] ?? null;
             $validationErrors = array_merge(
                 $validationErrors,
-                ValidateCollectionData::createErrorsList($collection, $this->validators, $index),
+                ValidateCollectionData::createErrorsList($collection, $this->validators, $index, null, null, $sourceLine),
             );
         }
 
@@ -234,10 +238,14 @@ class DataCollectionSpreadsheetReviewPipeline
             return;
         }
 
+        $this->structured_row_lines = [];
+
         if ($this->shouldStructureDataCollection()) {
-            $this->data_collection = (new StructureSpreadsheetData($this->data_collection, $this->repeat_group_keys))
-                ->estruture()
-                ->toArray();
+            $structureSpreadsheetData = (new StructureSpreadsheetData($this->data_collection, $this->repeat_group_keys))
+                ->estruture();
+
+            $this->data_collection = $structureSpreadsheetData->toArray();
+            $this->structured_row_lines = $structureSpreadsheetData->structuredRowLines();
         }
 
         $this->errors = [];
@@ -470,7 +478,11 @@ class DataCollectionSpreadsheetReviewPipeline
     protected function castValueByType(string $fieldType, mixed $fieldValue): mixed
     {
         if ($fieldType !== 'integer') {
-            return $fieldValue;
+            if ($fieldType !== 'decimal') {
+                return $fieldValue;
+            }
+
+            return $this->normalizeDecimalValue($fieldValue);
         }
 
         if (is_string($fieldValue)) {
@@ -498,6 +510,40 @@ class DataCollectionSpreadsheetReviewPipeline
         }
 
         return $fieldValue;
+    }
+
+    protected function normalizeDecimalValue(mixed $fieldValue): mixed
+    {
+        if (is_int($fieldValue) || is_float($fieldValue)) {
+            return $this->normalizeDecimalString((string) $fieldValue);
+        }
+
+        if (! is_string($fieldValue)) {
+            return $fieldValue;
+        }
+
+        $trimmedValue = trim($fieldValue);
+        if ($trimmedValue === '') {
+            return $fieldValue;
+        }
+
+        $normalizedValue = str_replace(',', '.', $trimmedValue);
+        if (! is_numeric($normalizedValue)) {
+            return $fieldValue;
+        }
+
+        return $this->normalizeDecimalString($normalizedValue);
+    }
+
+    protected function normalizeDecimalString(string $value): string
+    {
+        if (str_contains($value, '.')) {
+            $normalized = rtrim(rtrim($value, '0'), '.');
+
+            return str_contains($normalized, '.') ? $normalized : $normalized . '.0';
+        }
+
+        return $value . '.0';
     }
 
     protected function parentPath(string $fieldPath): string
@@ -550,8 +596,10 @@ class DataCollectionSpreadsheetReviewPipeline
                 $matchedOption = $this->findDynamicChoiceByLabel($currentValue, $options);
 
                 if ($matchedOption === null) {
+                    $sourceLine = $this->structured_row_lines[$index] ?? null;
                     $this->errors[] = [
                         'index' => $index,
+                        'line' => $sourceLine ?? $this->spreadsheetLineFromIndex($index),
                         'key' => $fieldName,
                         'value' => $currentValue,
                         'message' => sprintf(
@@ -603,5 +651,10 @@ class DataCollectionSpreadsheetReviewPipeline
         }
 
         return null;
+    }
+
+    protected function spreadsheetLineFromIndex(int $index): int
+    {
+        return $index + self::SPREADSHEET_DATA_START_LINE;
     }
 }
