@@ -287,6 +287,54 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     }
 
     #[Test]
+    public function pipelineShouldFailWhenSpreadsheetIsMissingRequiredXformColumns(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            ['campo_1'],
+            ['Campo 1'],
+            ['valor_1'],
+        ]);
+
+        $pipeline->validateCollectionFromJson([
+            'children' => [
+                ['name' => 'campo_1', 'type' => 'text'],
+                ['name' => 'campo_2', 'type' => 'text'],
+            ],
+        ]);
+
+        $pipeline->validateCollection();
+
+        $this->assertFalse($pipeline->valid());
+        $this->assertCount(1, $pipeline->errors());
+        $this->assertSame('campo_2', $pipeline->errors()[0]['key']);
+        $this->assertStringContainsString('Campo "campo_2" e necessario informar', $pipeline->errors()[0]['message']);
+    }
+
+    #[Test]
+    public function pipelineShouldFailWhenSpreadsheetHasExtraColumns(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            ['campo_1', 'campo_2', 'campo_extra'],
+            ['Campo 1', 'Campo 2', 'Campo extra'],
+            ['valor_1', 'valor_2', 'valor_extra'],
+        ]);
+
+        $pipeline->validateCollectionFromJson([
+            'children' => [
+                ['name' => 'campo_1', 'type' => 'text'],
+                ['name' => 'campo_2', 'type' => 'text'],
+            ],
+        ]);
+
+        $pipeline->validateCollection();
+
+        $this->assertFalse($pipeline->valid());
+        $this->assertCount(1, $pipeline->errors());
+        $this->assertSame('campo_extra', $pipeline->errors()[0]['key']);
+        $this->assertStringContainsString('Campo "campo_extra" nao existe no xform', $pipeline->errors()[0]['message']);
+    }
+
+    #[Test]
     public function pipelineShouldResolveDynamicChoicesToIdsWhenProcessingCollection(): void
     {
         $expected = [
@@ -472,9 +520,17 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $property->setAccessible(true);
         $property->setValue($pipeline, $worksheet);
 
+        $headersProperty = $reflection->getProperty('spreadsheet_headers');
+        $headersProperty->setAccessible(true);
+        $headersProperty->setValue($pipeline, $worksheet[0] ?? []);
+
         $preparedProperty = $reflection->getProperty('data_collection_prepared');
         $preparedProperty->setAccessible(true);
         $preparedProperty->setValue($pipeline, false);
+
+        $compatibilityProperty = $reflection->getProperty('compatibility_checked');
+        $compatibilityProperty->setAccessible(true);
+        $compatibilityProperty->setValue($pipeline, false);
 
         return $pipeline;
     }

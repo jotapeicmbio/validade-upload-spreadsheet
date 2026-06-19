@@ -21,12 +21,16 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $uuid_field_paths = [];
     protected array $repeat_group_keys = [];
     protected array $structured_row_lines = [];
+    protected array $spreadsheet_headers = [];
     protected bool $data_collection_prepared = false;
+    protected bool $compatibility_checked = false;
 
     public function setDataCollection(string $path): self
     {
         $this->data_collection = SpreadsheetReader::load($path);
+        $this->spreadsheet_headers = $this->extractSpreadsheetHeaders($this->data_collection);
         $this->data_collection_prepared = false;
+        $this->compatibility_checked = false;
         $this->errors = [];
         return $this;
     }
@@ -103,6 +107,17 @@ class DataCollectionSpreadsheetReviewPipeline
 
     public function validateCollection(): self
     {
+        if (! $this->compatibility_checked) {
+            $compatibilityErrors = $this->validateSpreadsheetCompatibility();
+            $this->compatibility_checked = true;
+
+            if ($compatibilityErrors !== []) {
+                $this->errors = array_merge($this->errors, $compatibilityErrors);
+
+                return $this;
+            }
+        }
+
         $this->prepareDataCollection();
         $validationErrors = [];
 
@@ -129,6 +144,7 @@ class DataCollectionSpreadsheetReviewPipeline
         $this->dynamic_choices = $dynamicChoices;
         $this->validators = CreateValidatorsStructure::build($formDefinition['children'] ?? [], $dynamicChoices);
         $this->repeat_group_keys = $this->extractRepeatGroupKeys($formDefinition['children'] ?? []);
+        $this->compatibility_checked = false;
 
         return $this;
     }
@@ -230,6 +246,97 @@ class DataCollectionSpreadsheetReviewPipeline
         }
 
         return array_values(array_unique($repeatGroupKeys));
+    }
+
+    /**
+     * @param array<int, array<int, mixed>> $dataCollection
+     * @return array<int, string>
+     */
+    protected function extractSpreadsheetHeaders(array $dataCollection): array
+    {
+        $headers = $dataCollection[0] ?? [];
+        if (! is_array($headers)) {
+            return [];
+        }
+
+        $normalizedHeaders = [];
+        foreach ($headers as $header) {
+            if (! is_string($header)) {
+                continue;
+            }
+
+            $header = trim($header);
+            if ($header === '') {
+                continue;
+            }
+
+            $normalizedHeaders[] = $header;
+        }
+
+        return $normalizedHeaders;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    protected function validateSpreadsheetCompatibility(): array
+    {
+        if ($this->validators === []) {
+            return [];
+        }
+
+        $expectedHeaders = [];
+        foreach ($this->validators as $fieldPath => $validator) {
+            if (! is_string($fieldPath) || $fieldPath === '') {
+                continue;
+            }
+
+            $fieldType = (string) ($validator['type'] ?? 'text');
+            if ($fieldType === 'group' || $fieldType === 'repeat') {
+                continue;
+            }
+
+            $expectedHeaders[] = $fieldPath;
+        }
+
+        $expectedHeaders = array_values(array_unique($expectedHeaders));
+        $spreadsheetHeaders = array_values(array_unique($this->spreadsheet_headers));
+        $missingHeaders = array_values(array_diff($expectedHeaders, $spreadsheetHeaders));
+        $unexpectedHeaders = array_values(array_diff($spreadsheetHeaders, $expectedHeaders));
+
+        if ($missingHeaders === [] && $unexpectedHeaders === []) {
+            return [];
+        }
+
+        $errors = [];
+
+        foreach ($missingHeaders as $fieldPath) {
+            $errors[] = [
+                'index' => 0,
+                'line' => 1,
+                'key' => $fieldPath,
+                'value' => null,
+                'message' => sprintf(
+                    'Campo "%s" e necessario informar. A planilha nao e compativel com o xform.',
+                    $fieldPath,
+                ),
+            ];
+        }
+
+        foreach ($unexpectedHeaders as $fieldPath) {
+            $errors[] = [
+                'index' => 0,
+                'line' => 1,
+                'key' => $fieldPath,
+                'value' => null,
+                'message' => sprintf(
+                    'Campo "%s" nao existe no xform. A planilha nao e compativel com o xform.',
+                    $fieldPath,
+                ),
+            ];
+        }
+
+        return $errors;
     }
 
     protected function prepareDataCollection(): void
