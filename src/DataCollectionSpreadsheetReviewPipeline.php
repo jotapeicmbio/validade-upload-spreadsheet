@@ -12,6 +12,17 @@ use Ramsey\Uuid\Uuid;
 class DataCollectionSpreadsheetReviewPipeline
 {
     private const SPREADSHEET_DATA_START_LINE = 3;
+    protected static array $ignoredCompatibilityFieldNames = [
+        'meta/instanceID',
+        'starttime',
+        'endtime',
+        'deviceid',
+        'devicephonenum'
+    ];
+    protected static array $ignoredCompatibilityFieldTypes = [
+        'calculate',
+        'note',
+    ];
 
     protected array $data_collection = [];
     protected array $validators = [];
@@ -22,8 +33,10 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $repeat_group_keys = [];
     protected array $structured_row_lines = [];
     protected array $spreadsheet_headers = [];
+    protected array $ignored_compatibility_field_paths_by_type = [];
     protected bool $data_collection_prepared = false;
     protected bool $compatibility_checked = false;
+    protected bool $compatibility_validation_enabled = true;
 
     public function setDataCollection(string $path): self
     {
@@ -107,7 +120,7 @@ class DataCollectionSpreadsheetReviewPipeline
 
     public function validateCollection(): self
     {
-        if (! $this->compatibility_checked) {
+        if ($this->compatibility_validation_enabled && ! $this->compatibility_checked) {
             $compatibilityErrors = $this->validateSpreadsheetCompatibility();
             $this->compatibility_checked = true;
 
@@ -144,6 +157,15 @@ class DataCollectionSpreadsheetReviewPipeline
         $this->dynamic_choices = $dynamicChoices;
         $this->validators = CreateValidatorsStructure::build($formDefinition['children'] ?? [], $dynamicChoices);
         $this->repeat_group_keys = $this->extractRepeatGroupKeys($formDefinition['children'] ?? []);
+        $this->ignored_compatibility_field_paths_by_type = $this->collectIgnoredCompatibilityFieldPaths($formDefinition['children'] ?? []);
+        $this->compatibility_checked = false;
+
+        return $this;
+    }
+
+    public function enableCompatibilityValidation(bool $enabled = true): self
+    {
+        $this->compatibility_validation_enabled = $enabled;
         $this->compatibility_checked = false;
 
         return $this;
@@ -296,13 +318,29 @@ class DataCollectionSpreadsheetReviewPipeline
                 continue;
             }
 
+            if ($this->isIgnoredCompatibilityField($fieldPath, $fieldType)) {
+                continue;
+            }
+
             $expectedHeaders[] = $fieldPath;
         }
 
         $expectedHeaders = array_values(array_unique($expectedHeaders));
         $spreadsheetHeaders = array_values(array_unique($this->spreadsheet_headers));
         $missingHeaders = array_values(array_diff($expectedHeaders, $spreadsheetHeaders));
-        $unexpectedHeaders = array_values(array_diff($spreadsheetHeaders, $expectedHeaders));
+        $unexpectedHeaders = [];
+
+        foreach ($spreadsheetHeaders as $header) {
+            if (in_array($header, $expectedHeaders, true)) {
+                continue;
+            }
+
+            if ($this->isIgnoredCompatibilityField($header, null)) {
+                continue;
+            }
+
+            $unexpectedHeaders[] = $header;
+        }
 
         if ($missingHeaders === [] && $unexpectedHeaders === []) {
             return [];
@@ -337,6 +375,108 @@ class DataCollectionSpreadsheetReviewPipeline
         }
 
         return $errors;
+    }
+
+    protected function isIgnoredCompatibilityField(string $fieldPath, ?string $fieldType): bool
+    {
+        if (in_array($fieldPath, self::$ignoredCompatibilityFieldNames, true)) {
+            return true;
+        }
+
+        if ($fieldType !== null && in_array($fieldType, self::$ignoredCompatibilityFieldTypes, true)) {
+            return true;
+        }
+
+        if (in_array($fieldPath, $this->ignored_compatibility_field_paths_by_type, true)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<int, string> $fieldNamesToAdd
+     * @param array<int, string> $fieldNamesToRemove
+     */
+    public static function configureIgnoredCompatibilityFieldNames(
+        array $fieldNamesToAdd = [],
+        array $fieldNamesToRemove = [],
+    ): void {
+        self::$ignoredCompatibilityFieldNames = self::mergeCompatibilityFieldList(
+            self::$ignoredCompatibilityFieldNames,
+            $fieldNamesToAdd,
+            $fieldNamesToRemove,
+        );
+    }
+
+    /**
+     * @param array<int, string> $fieldTypesToAdd
+     * @param array<int, string> $fieldTypesToRemove
+     */
+    public static function configureIgnoredCompatibilityFieldTypes(
+        array $fieldTypesToAdd = [],
+        array $fieldTypesToRemove = [],
+    ): void {
+        self::$ignoredCompatibilityFieldTypes = self::mergeCompatibilityFieldList(
+            self::$ignoredCompatibilityFieldTypes,
+            $fieldTypesToAdd,
+            $fieldTypesToRemove,
+        );
+    }
+
+    /**
+     * @param array<int, string> $currentValues
+     * @param array<int, string> $valuesToAdd
+     * @param array<int, string> $valuesToRemove
+     * @return array<int, string>
+     */
+    protected static function mergeCompatibilityFieldList(
+        array $currentValues,
+        array $valuesToAdd,
+        array $valuesToRemove,
+    ): array {
+        $currentValues = array_values(array_unique(array_merge($currentValues, $valuesToAdd)));
+
+        if ($valuesToRemove === []) {
+            return $currentValues;
+        }
+
+        return array_values(array_diff($currentValues, $valuesToRemove));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $nodes
+     * @return array<int, string>
+     */
+    protected function collectIgnoredCompatibilityFieldPaths(array $nodes, ?string $prefix = null): array
+    {
+        $paths = [];
+
+        foreach ($nodes as $node) {
+            if (! is_array($node)) {
+                continue;
+            }
+
+            $name = (string) ($node['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+
+            $fieldPath = $prefix !== null && $prefix !== ''
+                ? sprintf('%s/%s', $prefix, $name)
+                : $name;
+
+            $fieldType = (string) ($node['type'] ?? 'text');
+            if (in_array($fieldType, self::$ignoredCompatibilityFieldTypes, true)) {
+                $paths[] = $fieldPath;
+            }
+
+            if (isset($node['children']) && is_array($node['children'])) {
+                $paths = array_merge($paths, $this->collectIgnoredCompatibilityFieldPaths($node['children'], $fieldPath));
+            }
+        }
+
+        return array_values(array_unique($paths));
     }
 
     protected function prepareDataCollection(): void

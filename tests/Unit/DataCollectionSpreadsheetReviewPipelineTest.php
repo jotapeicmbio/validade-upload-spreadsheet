@@ -335,6 +335,69 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
     }
 
     #[Test]
+    public function pipelineShouldIgnoreCompatibilityFieldByName(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            ['campo_1', 'meta/instanceID'],
+            ['Campo 1', 'Instance ID'],
+            ['valor_1', 'uuid:abc'],
+        ]);
+
+        $pipeline->validateCollectionFromJson([
+            'children' => [
+                ['name' => 'campo_1', 'type' => 'text'],
+            ],
+        ]);
+
+        $pipeline->validateCollection();
+
+        $this->assertTrue($pipeline->valid());
+    }
+
+    #[Test]
+    public function pipelineShouldIgnoreCompatibilityFieldByType(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            ['campo_1', 'campo_calculado'],
+            ['Campo 1', 'Campo calculado'],
+            ['valor_1', 'valor_2'],
+        ]);
+
+        $pipeline->validateCollectionFromJson([
+            'children' => [
+                ['name' => 'campo_1', 'type' => 'text'],
+                ['name' => 'campo_calculado', 'type' => 'calculate', 'bind' => ['calculate' => 'uuid()']],
+            ],
+        ]);
+
+        $pipeline->validateCollection();
+
+        $this->assertTrue($pipeline->valid());
+    }
+
+    #[Test]
+    public function pipelineShouldBypassCompatibilityValidationWhenDisabled(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            ['campo_1'],
+            ['Campo 1'],
+            ['valor_1'],
+        ]);
+
+        $pipeline
+            ->enableCompatibilityValidation(false)
+            ->validateCollectionFromJson([
+                'children' => [
+                    ['name' => 'campo_1', 'type' => 'text'],
+                    ['name' => 'campo_2', 'type' => 'text'],
+                ],
+            ])
+            ->validateCollection();
+
+        $this->assertTrue($pipeline->valid());
+    }
+
+    #[Test]
     public function pipelineShouldResolveDynamicChoicesToIdsWhenProcessingCollection(): void
     {
         $expected = [
