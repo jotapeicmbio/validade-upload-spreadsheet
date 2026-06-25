@@ -33,7 +33,7 @@ class SpreadsheetReader
             range: 'A1:' . $sheet->getHighestDataColumn() . $sheet->getHighestDataRow(),
             nullValue: null,
             calculateFormulas: true,
-            formatData: false
+            formatData: true
         );
     }
 
@@ -41,7 +41,7 @@ class SpreadsheetReader
     {
         return IOFactory::load(
             filename: $this->path,
-            flags: IReader::READ_DATA_ONLY | IReader::IGNORE_EMPTY_CELLS
+            flags: IReader::IGNORE_EMPTY_CELLS
         );
     }
 
