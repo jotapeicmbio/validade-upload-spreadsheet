@@ -10,7 +10,8 @@
             "request": "launch",
             "port": 9003,
             "pathMappings": {
-                "/var/www/html": "${workspaceFolder}"
+                // "${workspaceFolder}": "${workspaceFolder}"
+                "/home/icmbio/project/validade-upload-spreadsheet": "${workspaceFolder}"
             }
         },
         {

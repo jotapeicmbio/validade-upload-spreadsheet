@@ -1,5 +1,0 @@
-Função Helper:
-    ☐ absolute_path(); # /var/www/html
-    ☐ absolute_path('files/xls/example_normal_spreadsheet.xls'); # /var/www/html/files/xls/example_normal_spreadsheet.xls
-    ☐ absolute_path('/files/xform'); # /var/www/html/files/xform
-    ☐ absolute_path('dont file dont exists or path don exists'); # return throw execption 

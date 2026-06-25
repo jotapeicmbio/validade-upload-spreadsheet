@@ -15,3 +15,6 @@
 /tests/local/gerados/*
 !/tests/local/gerados/.gitkeep
 !/tests/local/gerados/*/.gitkeep
+data_collection_convert_pipeline.php
+TODO
+/logs
