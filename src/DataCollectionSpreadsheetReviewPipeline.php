@@ -12,12 +12,15 @@ use Ramsey\Uuid\Uuid;
 class DataCollectionSpreadsheetReviewPipeline
 {
     private const SPREADSHEET_DATA_START_LINE = 3;
+    private const COMPATIBILITY_MISMATCH_THRESHOLD = 0.8;
     protected static array $ignoredCompatibilityFieldNames = [
         'meta/instanceID',
         'starttime',
         'endtime',
         'deviceid',
-        'devicephonenum'
+        'devicephonenum',
+        'subscriberid',
+        'simid'
     ];
     protected static array $ignoredCompatibilityFieldTypes = [
         'calculate',
@@ -328,53 +331,44 @@ class DataCollectionSpreadsheetReviewPipeline
         $expectedHeaders = array_values(array_unique($expectedHeaders));
         $spreadsheetHeaders = array_values(array_unique($this->spreadsheet_headers));
         $missingHeaders = array_values(array_diff($expectedHeaders, $spreadsheetHeaders));
-        $unexpectedHeaders = [];
 
-        foreach ($spreadsheetHeaders as $header) {
-            if (in_array($header, $expectedHeaders, true)) {
-                continue;
-            }
-
-            if ($this->isIgnoredCompatibilityField($header, null)) {
-                continue;
-            }
-
-            $unexpectedHeaders[] = $header;
-        }
-
-        if ($missingHeaders === [] && $unexpectedHeaders === []) {
+        if ($missingHeaders === []) {
             return [];
         }
 
-        $errors = [];
-
-        foreach ($missingHeaders as $fieldPath) {
-            $errors[] = [
+        if ($this->isLikelyDifferentForm($missingHeaders, $expectedHeaders)) {
+            return [[
                 'index' => 0,
                 'line' => 1,
-                'key' => $fieldPath,
+                'key' => $missingHeaders[0],
                 'value' => null,
-                'message' => sprintf(
-                    'Campo "%s" e necessario informar. A planilha nao e compativel com o xform.',
-                    $fieldPath,
-                ),
-            ];
+                'message' => 'A planilha e o xform parecem ser de formulários diferentes. Verifique se o arquivo enviado corresponde ao formulário correto.',
+            ]];
         }
 
-        foreach ($unexpectedHeaders as $fieldPath) {
-            $errors[] = [
-                'index' => 0,
-                'line' => 1,
-                'key' => $fieldPath,
-                'value' => null,
-                'message' => sprintf(
-                    'Campo "%s" nao existe no xform. A planilha nao e compativel com o xform.',
-                    $fieldPath,
-                ),
-            ];
+        return [[
+            'index' => 0,
+            'line' => 1,
+            'key' => $missingHeaders[0],
+            'value' => null,
+            'message' => sprintf(
+                'A planilha não é compatível com o xform. Os campos %s são obrigatórios.',
+                implode(', ', array_map(static fn (string $fieldPath): string => sprintf('"%s"', $fieldPath), $missingHeaders)),
+            ),
+        ]];
+    }
+
+    /**
+     * @param array<int, string> $missingHeaders
+     * @param array<int, string> $expectedHeaders
+     */
+    protected function isLikelyDifferentForm(array $missingHeaders, array $expectedHeaders): bool
+    {
+        if ($expectedHeaders === []) {
+            return false;
         }
 
-        return $errors;
+        return (count($missingHeaders) / count($expectedHeaders)) >= self::COMPATIBILITY_MISMATCH_THRESHOLD;
     }
 
     protected function isIgnoredCompatibilityField(string $fieldPath, ?string $fieldType): bool

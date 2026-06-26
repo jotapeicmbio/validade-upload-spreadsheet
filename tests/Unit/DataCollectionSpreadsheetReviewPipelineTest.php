@@ -307,7 +307,37 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $this->assertFalse($pipeline->valid());
         $this->assertCount(1, $pipeline->errors());
         $this->assertSame('campo_2', $pipeline->errors()[0]['key']);
-        $this->assertStringContainsString('Campo "campo_2" e necessario informar', $pipeline->errors()[0]['message']);
+        $this->assertSame(
+            'A planilha não é compatível com o xform. Os campos "campo_2" são obrigatórios.',
+            $pipeline->errors()[0]['message']
+        );
+    }
+
+    #[Test]
+    public function pipelineShouldFailWithClearMessageWhenSpreadsheetLooksLikeAnotherForm(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            ['campo_x', 'campo_y'],
+            ['Campo X', 'Campo Y'],
+            ['valor_x', 'valor_y'],
+        ]);
+
+        $pipeline->validateCollectionFromJson([
+            'children' => [
+                ['name' => 'campo_1', 'type' => 'text'],
+                ['name' => 'campo_2', 'type' => 'text'],
+            ],
+        ]);
+
+        $pipeline->validateCollection();
+
+        $this->assertFalse($pipeline->valid());
+        $this->assertCount(1, $pipeline->errors());
+        $this->assertSame('campo_1', $pipeline->errors()[0]['key']);
+        $this->assertSame(
+            'A planilha e o xform parecem ser de formulários diferentes. Verifique se o arquivo enviado corresponde ao formulário correto.',
+            $pipeline->errors()[0]['message']
+        );
     }
 
     #[Test]
@@ -328,10 +358,8 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
 
         $pipeline->validateCollection();
 
-        $this->assertFalse($pipeline->valid());
-        $this->assertCount(1, $pipeline->errors());
-        $this->assertSame('campo_extra', $pipeline->errors()[0]['key']);
-        $this->assertStringContainsString('Campo "campo_extra" nao existe no xform', $pipeline->errors()[0]['message']);
+        $this->assertTrue($pipeline->valid());
+        $this->assertSame([], $pipeline->errors());
     }
 
     #[Test]
