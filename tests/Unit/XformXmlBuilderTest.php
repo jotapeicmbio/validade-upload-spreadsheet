@@ -142,6 +142,44 @@ final class XformXmlBuilderTest extends TestCase
         self::assertNotSame('', $xpath->evaluate('string(/xml/grupo_a/grupo_b/item_uuid)'));
     }
 
+    public function test_build_should_omit_empty_repeat_when_no_item_is_present(): void
+    {
+        $data = [
+            'campo_a' => 'valor_a',
+        ];
+
+        $formDefinition = [
+            'children' => [
+                ['name' => 'campo_a', 'type' => 'text'],
+                [
+                    'name' => 'grupo_a',
+                    'type' => 'repeat',
+                    'children' => [
+                        ['name' => 'campo_b', 'type' => 'text'],
+                    ],
+                ],
+            ],
+        ];
+
+        $xml = XformXmlBuilder::build(
+            $data,
+            ['campo_a', 'grupo_a/campo_b'],
+            'xml',
+            'xml_id',
+            '1.0',
+            null,
+            '2026-04-01T10:20:30.000-03:00',
+            $formDefinition,
+        );
+
+        $doc = new DOMDocument();
+        $doc->loadXML($xml);
+        $xpath = new DOMXPath($doc);
+
+        self::assertSame('valor_a', $xpath->evaluate('string(/xml/campo_a)'));
+        self::assertSame('0', (string) $xpath->evaluate('count(/xml/grupo_a)'));
+    }
+
     public function test_build_should_normalize_decimal_comma_to_point(): void
     {
         $data = ['campo_decimal' => '5,5'];

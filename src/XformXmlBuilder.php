@@ -152,8 +152,6 @@ class XformXmlBuilder
                     continue;
                 }
 
-                $preparedData[$name] = [[]];
-
                 continue;
             }
 
