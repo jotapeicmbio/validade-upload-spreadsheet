@@ -14,17 +14,17 @@ final class XformXmlBuilderTest extends TestCase
     public function test_build_generates_xform_xml_with_defaults_and_meta(): void
     {
         $data = [
-            'uc' => 'Unidade 1',
+            'uc' => 'valor_a',
             '_attachments' => [
-                ['name' => 'nao deve aparecer'],
+                ['name' => 'nao_deve_aparecer'],
             ],
-            'coletor' => [
-                ['coletor/cpf' => '11111111111', 'coletor/nome' => 'Ana'],
-                ['coletor/cpf' => '22222222222', 'coletor/nome' => 'Bruno'],
+            'grupo_a' => [
+                ['grupo_a/campo_a' => 'valor_b', 'grupo_a/campo_b' => 'valor_c'],
+                ['grupo_a/campo_a' => 'valor_d', 'grupo_a/campo_b' => 'valor_e'],
             ],
         ];
 
-        $keys = ['uc', 'coletor'];
+        $keys = ['uc', 'grupo_a'];
         $xml = XformXmlBuilder::build(
             $data,
             $keys,
@@ -44,7 +44,7 @@ final class XformXmlBuilderTest extends TestCase
         self::assertSame('1.0', $doc->documentElement->getAttribute('version'));
         self::assertSame('http://openrosa.org/javarosa', $doc->documentElement?->getAttribute('xmlns:jr'));
 
-        self::assertSame('Unidade 1', $xpath->evaluate('string(/xml/uc)'));
+        self::assertSame('valor_a', $xpath->evaluate('string(/xml/uc)'));
         self::assertMatchesRegularExpression(
             '/^uuid:[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
             $xpath->evaluate('string(/xml/meta/instanceID)'),
@@ -54,18 +54,18 @@ final class XformXmlBuilderTest extends TestCase
         self::assertSame('monitora.sisicmbio.icmbio.gov.br', $xpath->evaluate('string(/xml/deviceid)'));
         self::assertSame('simserial not found', $xpath->evaluate('string(/xml/simid)'));
 
-        self::assertSame('2', (string) $xpath->evaluate('count(/xml/coletor)'));
-        self::assertSame('11111111111', $xpath->evaluate('string(/xml/coletor[1]/cpf)'));
-        self::assertSame('Ana', $xpath->evaluate('string(/xml/coletor[1]/nome)'));
-        self::assertSame('22222222222', $xpath->evaluate('string(/xml/coletor[2]/cpf)'));
-        self::assertSame('Bruno', $xpath->evaluate('string(/xml/coletor[2]/nome)'));
+        self::assertSame('2', (string) $xpath->evaluate('count(/xml/grupo_a)'));
+        self::assertSame('valor_b', $xpath->evaluate('string(/xml/grupo_a[1]/campo_a)'));
+        self::assertSame('valor_c', $xpath->evaluate('string(/xml/grupo_a[1]/campo_b)'));
+        self::assertSame('valor_d', $xpath->evaluate('string(/xml/grupo_a[2]/campo_a)'));
+        self::assertSame('valor_e', $xpath->evaluate('string(/xml/grupo_a[2]/campo_b)'));
 
         self::assertSame('0', (string) $xpath->evaluate('count(/xml/_attachments)'));
     }
 
     public function test_build_uses_given_uuid_in_meta_instance_id(): void
     {
-        $data = ['uc' => 'Unidade 1'];
+        $data = ['uc' => 'valor_a'];
         $keys = ['uc'];
         $xml = XformXmlBuilder::build(
             $data,
@@ -87,33 +87,33 @@ final class XformXmlBuilderTest extends TestCase
     public function test_build_should_include_troncos_uuid_in_nested_repeat_from_form_definition(): void
     {
         $data = [
-            'individuos_registro' => [[
-                'individuos_registro/troncos_registro' => [[
-                    'individuos_registro/troncos_registro/etiqueta_atual' => 'T001',
+            'grupo_a' => [[
+                'grupo_a/grupo_b' => [[
+                    'grupo_a/grupo_b/campo_a' => 'valor_a',
                 ]],
             ]],
         ];
 
         $keys = [
-            'individuos_registro',
-            'individuos_registro/troncos_registro',
-            'individuos_registro/troncos_registro/etiqueta_atual',
+            'grupo_a',
+            'grupo_a/grupo_b',
+            'grupo_a/grupo_b/campo_a',
         ];
 
         $formDefinition = [
             'children' => [[
-                'name' => 'individuos_registro',
+                'name' => 'grupo_a',
                 'type' => 'repeat',
                 'children' => [[
-                    'name' => 'troncos_registro',
+                    'name' => 'grupo_b',
                     'type' => 'repeat',
                     'children' => [
                         [
-                            'name' => 'etiqueta_atual',
+                            'name' => 'campo_a',
                             'type' => 'text',
                         ],
                         [
-                            'name' => 'troncos_uuid',
+                            'name' => 'item_uuid',
                             'type' => 'calculate',
                             'bind' => [
                                 'calculate' => 'uuid()',
@@ -139,10 +139,7 @@ final class XformXmlBuilderTest extends TestCase
         $doc->loadXML($xml);
         $xpath = new DOMXPath($doc);
 
-        self::assertNotSame(
-            '',
-            $xpath->evaluate('string(/xml/individuos_registro/troncos_registro/troncos_uuid)'),
-        );
+        self::assertNotSame('', $xpath->evaluate('string(/xml/grupo_a/grupo_b/item_uuid)'));
     }
 
     public function test_build_should_normalize_decimal_comma_to_point(): void

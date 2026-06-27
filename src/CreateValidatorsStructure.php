@@ -61,16 +61,16 @@ class CreateValidatorsStructure
             }
 
             if (isset($formFieldNode['bind']) && is_array($formFieldNode['bind'])) {
-                $bindOptions = $formFieldNode['bind'];
-                foreach ($bindOptions as $bindKey => $bindValue) {
-                    match ((string) $bindKey) {
-                        'constraint' => $constraintExpression = (string) $bindValue,
-                        'jr:constraintMsg' => $constraintMessage = (string) $bindValue,
-                        'required' => $requiredExpression = ((string) $bindValue === 'yes') ? 'true()' : (string) $bindValue,
-                        'jr:requiredMsg' => $requiredMessage = (string) $bindValue,
-                        'relevant' => $relevanceExpression = (string) $bindValue,
-                        'calculate' => $calculationExpression = (string) $bindValue,
-                        default => null,
+                    $bindOptions = $formFieldNode['bind'];
+                    foreach ($bindOptions as $bindKey => $bindValue) {
+                        match ((string) $bindKey) {
+                            'constraint' => $constraintExpression = $this->normalizeExpression((string) $bindValue),
+                            'jr:constraintMsg' => $constraintMessage = (string) $bindValue,
+                            'required' => $requiredExpression = $this->normalizeExpression((string) $bindValue === 'yes' ? 'true()' : (string) $bindValue),
+                            'jr:requiredMsg' => $requiredMessage = (string) $bindValue,
+                            'relevant' => $relevanceExpression = $this->normalizeExpression((string) $bindValue),
+                            'calculate' => $calculationExpression = $this->normalizeExpression((string) $bindValue),
+                            default => null,
                     };
                 }
             }
@@ -191,5 +191,19 @@ class CreateValidatorsStructure
     protected function isAssociativeArray(array $value): bool
     {
         return array_keys($value) !== range(0, count($value) - 1);
+    }
+
+    protected function normalizeExpression(string $expression): string
+    {
+        return (string) preg_replace_callback(
+            '~(?<![A-Za-z0-9_])(/[A-Za-z0-9_]+(?:/[A-Za-z0-9_]+)+)~',
+            static function (array $matches): string {
+                $segments = explode('/', trim($matches[1], '/'));
+                $fieldName = (string) end($segments);
+
+                return '${' . $fieldName . '}';
+            },
+            $expression,
+        );
     }
 }

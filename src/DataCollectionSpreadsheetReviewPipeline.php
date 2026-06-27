@@ -25,6 +25,11 @@ class DataCollectionSpreadsheetReviewPipeline
     protected static array $ignoredCompatibilityFieldTypes = [
         'calculate',
         'note',
+        'hidden',
+        'start',
+        'end',
+        'deviceid',
+        'phonenumber',
     ];
 
     protected array $data_collection = [];
@@ -32,11 +37,13 @@ class DataCollectionSpreadsheetReviewPipeline
     protected array $errors = [];
     protected array $dynamic_choices = [];
     protected array $form_definition = [];
+    protected ?XformSchema $xform_schema = null;
     protected array $uuid_field_paths = [];
     protected array $repeat_group_keys = [];
     protected array $structured_row_lines = [];
     protected array $spreadsheet_headers = [];
     protected array $ignored_compatibility_field_paths_by_type = [];
+    protected ?TypeNormalizerRegistry $type_normalizers = null;
     protected bool $data_collection_prepared = false;
     protected bool $compatibility_checked = false;
     protected bool $compatibility_validation_enabled = true;
@@ -105,6 +112,12 @@ class DataCollectionSpreadsheetReviewPipeline
 
     public function collection(): array
     {
+        if ($this->xform_schema !== null) {
+            $this->prepareDataCollection();
+
+            return $this->data_collection;
+        }
+
         if ($this->shouldStructureDataCollection()) {
             return (new StructureSpreadsheetData($this->data_collection, $this->repeat_group_keys))
                 ->estruture()
@@ -159,6 +172,9 @@ class DataCollectionSpreadsheetReviewPipeline
         $this->form_definition = $formDefinition;
         $this->dynamic_choices = $dynamicChoices;
         $this->validators = CreateValidatorsStructure::build($formDefinition['children'] ?? [], $dynamicChoices);
+        $this->xform_schema = isset($formDefinition['children']) && is_array($formDefinition['children'])
+            ? XformSchema::fromArray($formDefinition)
+            : null;
         $this->repeat_group_keys = $this->extractRepeatGroupKeys($formDefinition['children'] ?? []);
         $this->ignored_compatibility_field_paths_by_type = $this->collectIgnoredCompatibilityFieldPaths($formDefinition['children'] ?? []);
         $this->compatibility_checked = false;
@@ -310,23 +326,9 @@ class DataCollectionSpreadsheetReviewPipeline
             return [];
         }
 
-        $expectedHeaders = [];
-        foreach ($this->validators as $fieldPath => $validator) {
-            if (! is_string($fieldPath) || $fieldPath === '') {
-                continue;
-            }
-
-            $fieldType = (string) ($validator['type'] ?? 'text');
-            if ($fieldType === 'group' || $fieldType === 'repeat') {
-                continue;
-            }
-
-            if ($this->isIgnoredCompatibilityField($fieldPath, $fieldType)) {
-                continue;
-            }
-
-            $expectedHeaders[] = $fieldPath;
-        }
+        $expectedHeaders = $this->xform_schema !== null
+            ? $this->collectCompatibleSpreadsheetFields($this->xform_schema->root()->children)
+            : $this->collectExpectedHeadersFromValidators();
 
         $expectedHeaders = array_values(array_unique($expectedHeaders));
         $spreadsheetHeaders = array_values(array_unique($this->spreadsheet_headers));
@@ -356,6 +358,97 @@ class DataCollectionSpreadsheetReviewPipeline
                 implode(', ', array_map(static fn (string $fieldPath): string => sprintf('"%s"', $fieldPath), $missingHeaders)),
             ),
         ]];
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function collectExpectedHeadersFromValidators(): array
+    {
+        $expectedHeaders = [];
+
+        foreach ($this->validators as $fieldPath => $validator) {
+            if (! is_string($fieldPath) || $fieldPath === '') {
+                continue;
+            }
+
+            $fieldType = (string) ($validator['type'] ?? 'text');
+            if ($fieldType === 'group' || $fieldType === 'repeat') {
+                continue;
+            }
+
+            if ($this->isIgnoredCompatibilityField($fieldPath, $fieldType)) {
+                continue;
+            }
+
+            $expectedHeaders[] = $fieldPath;
+        }
+
+        return $expectedHeaders;
+    }
+
+    /**
+     * @param list<XformSchemaNode> $nodes
+     * @return list<string>
+     */
+    protected function collectCompatibleSpreadsheetFields(array $nodes): array
+    {
+        $expectedHeaders = [];
+
+        foreach ($nodes as $node) {
+            if (! $node instanceof XformSchemaNode) {
+                continue;
+            }
+
+            if ($this->isIgnoredCompatibilitySchemaNode($node)) {
+                continue;
+            }
+
+            if ($node->isGroup() || $node->isRepeat()) {
+                if (! $this->hasSpreadsheetHeaderForPath($node->path)) {
+                    continue;
+                }
+
+                $expectedHeaders = array_merge(
+                    $expectedHeaders,
+                    $this->collectCompatibleSpreadsheetFields($node->children),
+                );
+
+                continue;
+            }
+
+            if ($node->relevant !== null) {
+                continue;
+            }
+
+            $expectedHeaders[] = $node->path;
+        }
+
+        return $expectedHeaders;
+    }
+
+    protected function isIgnoredCompatibilitySchemaNode(XformSchemaNode $node): bool
+    {
+        if (in_array($node->path, self::$ignoredCompatibilityFieldNames, true)) {
+            return true;
+        }
+
+        if (in_array($node->type, self::$ignoredCompatibilityFieldTypes, true)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function hasSpreadsheetHeaderForPath(string $path): bool
+    {
+        foreach ($this->spreadsheet_headers as $header) {
+            if ($header === $path || str_starts_with($header, $path . '/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -494,6 +587,9 @@ class DataCollectionSpreadsheetReviewPipeline
         $this->data_collection = $this->resolveDynamicChoices($this->data_collection);
         $this->data_collection = $this->castCollectionValues($this->data_collection);
         $this->data_collection = $this->fillMissingUuidValues($this->data_collection);
+        if ($this->xform_schema !== null) {
+            $this->data_collection = (new SpreadsheetStructureBuilder($this->xform_schema))->build($this->data_collection);
+        }
         $this->data_collection_prepared = true;
     }
 
@@ -695,9 +791,9 @@ class DataCollectionSpreadsheetReviewPipeline
     protected function castNodeValues(array $node): array
     {
         foreach ($node as $fieldName => $fieldValue) {
-            $fieldType = (string) ($this->validators[$fieldName]['type'] ?? '');
+            $fieldType = $this->resolveFieldType($fieldName);
 
-            if ($fieldType === 'repeat' && is_array($fieldValue) && array_is_list($fieldValue)) {
+            if (is_array($fieldValue) && array_is_list($fieldValue)) {
                 foreach ($fieldValue as $childIndex => $childNode) {
                     if (! is_array($childNode)) {
                         continue;
@@ -710,81 +806,56 @@ class DataCollectionSpreadsheetReviewPipeline
                 continue;
             }
 
-            $node[$fieldName] = $this->castValueByType($fieldType, $fieldValue);
+            if (is_array($fieldValue)) {
+                $node[$fieldName] = $this->castNodeValues($fieldValue);
+                continue;
+            }
+
+            $node[$fieldName] = $this->typeNormalizers()->normalize($fieldType, $fieldValue);
         }
 
         return $node;
     }
 
-    protected function castValueByType(string $fieldType, mixed $fieldValue): mixed
+    protected function resolveFieldType(string $fieldName): string
     {
-        if ($fieldType !== 'integer') {
-            if ($fieldType !== 'decimal') {
-                return $fieldValue;
-            }
-
-            return $this->normalizeDecimalValue($fieldValue);
+        if (isset($this->validators[$fieldName]['type'])) {
+            return (string) $this->validators[$fieldName]['type'];
         }
 
-        if (is_string($fieldValue)) {
-            $trimmedValue = trim($fieldValue);
+        $fieldLastSegment = $this->lastSegment($fieldName);
 
-            if ($trimmedValue !== '' && preg_match('/^-?\d+$/', $trimmedValue) === 1) {
-                return (int) $trimmedValue;
-            }
-        }
-
-        if (! is_array($fieldValue) || ! array_is_list($fieldValue)) {
-            return $fieldValue;
-        }
-
-        foreach ($fieldValue as $index => $item) {
-            if (! is_string($item)) {
+        foreach ($this->validators as $validatorPath => $validator) {
+            if (! is_string($validatorPath)) {
                 continue;
             }
 
-            $trimmedItem = trim($item);
+            if ($validatorPath === $fieldName || str_ends_with($validatorPath, '/' . $fieldName)) {
+                return (string) ($validator['type'] ?? '');
+            }
 
-            if ($trimmedItem !== '' && preg_match('/^-?\d+$/', $trimmedItem) === 1) {
-                $fieldValue[$index] = (int) $trimmedItem;
+            if ($fieldLastSegment !== '' && $this->lastSegment($validatorPath) === $fieldLastSegment) {
+                return (string) ($validator['type'] ?? '');
             }
         }
 
-        return $fieldValue;
+        return '';
     }
 
-    protected function normalizeDecimalValue(mixed $fieldValue): mixed
+    protected function lastSegment(string $path): string
     {
-        if (is_int($fieldValue) || is_float($fieldValue)) {
-            return $this->normalizeDecimalString((string) $fieldValue);
-        }
+        $segments = explode('/', $path);
 
-        if (! is_string($fieldValue)) {
-            return $fieldValue;
-        }
-
-        $trimmedValue = trim($fieldValue);
-        if ($trimmedValue === '') {
-            return $fieldValue;
-        }
-
-        $normalizedValue = str_replace(',', '.', $trimmedValue);
-        if (! is_numeric($normalizedValue)) {
-            return $fieldValue;
-        }
-
-        return $this->normalizeDecimalString($normalizedValue);
+        return (string) array_pop($segments);
     }
 
-    protected function normalizeDecimalString(string $value): string
+    protected function typeNormalizers(): TypeNormalizerRegistry
     {
-        if (str_contains($value, '.')) {
-            $normalized = rtrim(rtrim($value, '0'), '.');
-
-            return str_contains($normalized, '.') ? $normalized : $normalized . '.0';
+        if ($this->type_normalizers === null) {
+            $this->type_normalizers = TypeNormalizerRegistry::default();
         }
 
-        return $value . '.0';
+        return $this->type_normalizers;
     }
 
     protected function parentPath(string $fieldPath): string

@@ -301,10 +301,6 @@ class StructureSpreadsheetData
 
         $items = $this->buildGroupedItems($columns, $groupKey);
 
-        if ($this->isRepeatGroup($groupKey)) {
-            return $items;
-        }
-
         if ($this->shouldCollapseGroupedItems($items)) {
             return $this->collapseGroupedItems($items);
         }
@@ -488,7 +484,11 @@ class StructureSpreadsheetData
                 continue;
             }
 
-            if (str_contains($fieldPath, '/')) {
+            $relativePath = str_starts_with($fieldPath, $groupKey . '/')
+                ? substr($fieldPath, strlen($groupKey) + 1)
+                : null;
+
+            if ($relativePath === null || str_contains($relativePath, '/')) {
                 continue;
             }
 

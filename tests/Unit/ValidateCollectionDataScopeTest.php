@@ -43,6 +43,20 @@ final class ValidateCollectionDataScopeTest extends TestCase
         self::assertSame([], $errors);
     }
 
+    #[Test]
+    public function repete_no_topo_preserva_campo_do_grupo_irmao_no_contexto(): void
+    {
+        $validators = CreateValidatorsStructure::build($this->xformNodesTopLevelRepeat());
+        $data = $this->collectionDataTopLevelRepeat();
+
+        $context = $this->buildContext($data);
+        $errors = ValidateCollectionData::createErrorsList($data, $validators);
+
+        self::assertArrayHasKey('campo_a', $context);
+        self::assertSame('valor_a', $context['campo_a']);
+        self::assertSame([], $errors);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -79,6 +93,26 @@ final class ValidateCollectionDataScopeTest extends TestCase
                             'campo_3' => 'valor',
                         ],
                     ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function collectionDataTopLevelRepeat(): array
+    {
+        return [
+            'lista_a' => [
+                [
+                    'campo_a' => 'valor_a',
+                    'campo_b' => 'valor_b',
+                ],
+            ],
+            'lista_b' => [
+                [
+                    'campo_c' => 'valor_c',
                 ],
             ],
         ];
@@ -163,6 +197,45 @@ final class ValidateCollectionDataScopeTest extends TestCase
                                     'required' => 'yes',
                                 ],
                             ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function xformNodesTopLevelRepeat(): array
+    {
+        return [
+            [
+                'name' => 'lista_a',
+                'type' => 'repeat',
+                'children' => [
+                    [
+                        'name' => 'campo_a',
+                        'type' => 'select1',
+                    ],
+                    [
+                        'name' => 'campo_b',
+                        'type' => 'select',
+                    ],
+                ],
+            ],
+            [
+                'name' => 'lista_b',
+                'type' => 'repeat',
+                'bind' => [
+                    'relevant' => "selected( \${campo_a}, 'valor_a')",
+                ],
+                'children' => [
+                    [
+                        'name' => 'campo_c',
+                        'type' => 'select1',
+                        'bind' => [
+                            'required' => 'yes',
                         ],
                     ],
                 ],

@@ -31,20 +31,16 @@ class StructureSpreadsheetDataTest extends TestCase
             ->toArray();
 
         self::assertIsArray($actual[0]['individuos_registro'] ?? null);
-        self::assertCount(2, $actual[0]['individuos_registro']);
-        self::assertSame('2', $actual[0]['individuos_registro'][0]['individuos_registro/numero_troncos']);
-        self::assertSame('2', $actual[0]['individuos_registro'][1]['individuos_registro/numero_troncos']);
-        self::assertSame('ok', $actual[0]['individuos_registro'][0]['individuos_registro/observacoes_individuo']);
-        self::assertSame('ok', $actual[0]['individuos_registro'][1]['individuos_registro/observacoes_individuo']);
-        self::assertArrayHasKey('troncos_registro', $actual[0]['individuos_registro'][0]);
-        self::assertArrayHasKey('troncos_registro', $actual[0]['individuos_registro'][1]);
+        self::assertSame('2', $actual[0]['individuos_registro']['individuos_registro/numero_troncos']);
+        self::assertSame('ok', $actual[0]['individuos_registro']['individuos_registro/observacoes_individuo']);
+        self::assertArrayHasKey('troncos_registro', $actual[0]['individuos_registro']);
         self::assertSame(
             'T001',
-            $actual[0]['individuos_registro'][0]['troncos_registro'][0]['individuos_registro/troncos_registro/etiqueta_atual'],
+            $actual[0]['individuos_registro']['troncos_registro'][0]['individuos_registro/troncos_registro/etiqueta_atual'],
         );
         self::assertSame(
             'T002',
-            $actual[0]['individuos_registro'][1]['troncos_registro'][0]['individuos_registro/troncos_registro/etiqueta_atual'],
+            $actual[0]['individuos_registro']['troncos_registro'][1]['individuos_registro/troncos_registro/etiqueta_atual'],
         );
     }
 
@@ -199,6 +195,54 @@ class StructureSpreadsheetDataTest extends TestCase
             ->toArray();
 
         $this->assertEquals($expected, $actual);
+    }
+
+    #[Test]
+    public function devePropagarCamposDiretosDoRepeatMesmoQuandoORegistroTemSubRepeat(): void
+    {
+        $input = [
+            [
+                'producao_registro/grupo_captura',
+                'producao_registro/especie_captura',
+                'producao_registro/total_individuos',
+                'producao_registro/biometria_registro/comprimento_total_cm',
+            ],
+            [
+                'Grupo',
+                'Espécie',
+                'Total',
+                'Comprimento',
+            ],
+            [
+                'pacu',
+                'pacu-branco',
+                '2',
+                '25',
+            ],
+            [
+                null,
+                null,
+                null,
+                '20',
+            ],
+        ];
+
+        $actual = (new StructureSpreadsheetData($input, ['producao_registro']))
+            ->estruture()
+            ->toArray();
+
+        self::assertCount(1, $actual);
+        self::assertIsArray($actual[0]['producao_registro']);
+        self::assertSame('pacu', $actual[0]['producao_registro']['producao_registro/grupo_captura']);
+        self::assertSame('pacu-branco', $actual[0]['producao_registro']['producao_registro/especie_captura']);
+        self::assertSame(
+            '25',
+            $actual[0]['producao_registro']['biometria_registro'][0]['producao_registro/biometria_registro/comprimento_total_cm'],
+        );
+        self::assertSame(
+            '20',
+            $actual[0]['producao_registro']['biometria_registro'][1]['producao_registro/biometria_registro/comprimento_total_cm'],
+        );
     }
 
 }

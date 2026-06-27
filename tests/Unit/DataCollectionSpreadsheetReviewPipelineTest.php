@@ -87,18 +87,49 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
         $this->assertCount(1, $result);
         $this->assertSame('registro_1', $result[0]['campo_1']);
         $this->assertSame('base_1', $result[0]['campo_2']);
-        $this->assertCount(4, $result[0]['grupo_1']);
+        $this->assertCount(1, $result[0]['grupo_1']);
         $this->assertSame('grupo_1_a', $result[0]['grupo_1'][0]['grupo_1/campo_1']);
         $this->assertSame('grupo_campo_1_a', $result[0]['grupo_1'][0]['grupo_1/grupo_campo_1']);
-        $this->assertCount(1, $result[0]['grupo_1'][0]['biometria_registro']);
+        $this->assertCount(4, $result[0]['grupo_1'][0]['biometria_registro']);
         $this->assertSame(
-            18,
+            '18',
             $result[0]['grupo_1'][0]['biometria_registro'][0]['grupo_1/biometria_registro/comprimento_total_cm'],
         );
         $this->assertSame(
-            19,
-            $result[0]['grupo_1'][3]['biometria_registro'][0]['grupo_1/biometria_registro/comprimento_total_cm'],
+            '19',
+            $result[0]['grupo_1'][0]['biometria_registro'][3]['grupo_1/biometria_registro/comprimento_total_cm'],
         );
+    }
+
+    #[Test]
+    public function compatibilityShouldIgnoreRepeatSubtreesAbsentFromSpreadsheetHeaders(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            ['campo_principal'],
+            ['Valor'],
+            ['presente'],
+        ]);
+
+        $result = $pipeline
+            ->validateCollectionFromJson([
+                'children' => [
+                    ['name' => 'campo_principal', 'type' => 'text', 'bind' => ['required' => 'yes']],
+                    ['name' => 'tipo_monitoramento', 'type' => 'hidden', 'bind' => ['required' => 'yes']],
+                    ['name' => 'grupo_a', 'type' => 'repeat', 'children' => [
+                        ['name' => 'campo_a', 'type' => 'text', 'bind' => ['required' => 'yes']],
+                        ['name' => 'campo_b', 'type' => 'text', 'bind' => ['required' => 'yes']],
+                    ]],
+                    ['name' => 'cabecalho', 'type' => 'group', 'children' => [
+                        ['name' => 'obs_localizacao', 'type' => 'text', 'bind' => [
+                            'required' => 'yes',
+                            'relevant' => 'selected(${campo_principal}, \"sim\")',
+                        ]],
+                    ]],
+                ],
+            ])
+            ->validateCollection();
+
+        $this->assertTrue($result->valid());
     }
 
     #[Test]
@@ -284,6 +315,71 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
             ->process();
 
         $this->assertSame('5.5', $result[0]['decimal_field']);
+    }
+
+    #[Test]
+    public function pipelineShouldCastIntegerInsideCollapsedRepeatGroup(): void
+    {
+        $pipeline = $this->makePipelineWithSpreadsheet([
+            [
+                'campo_1',
+                'grupo_1/total_individuos',
+                'grupo_1/biometria_registro/comprimento_total_cm',
+            ],
+            [
+                'Campo 1',
+                'Total',
+                'Comprimento',
+            ],
+            [
+                'registro_1',
+                '2',
+                '18',
+            ],
+            [
+                null,
+                null,
+                '19',
+            ],
+        ]);
+
+        $result = $pipeline
+            ->validateCollectionFromJson([
+                'children' => [
+                    ['name' => 'campo_1', 'type' => 'text'],
+                    [
+                        'name' => 'grupo_1',
+                        'type' => 'group',
+                        'children' => [
+                            [
+                                'name' => 'grupo_1',
+                                'type' => 'repeat',
+                                'children' => [
+                                    ['name' => 'total_individuos', 'type' => 'integer'],
+                                    [
+                                        'name' => 'biometria_registro',
+                                        'type' => 'group',
+                                        'children' => [
+                                            [
+                                                'name' => 'biometria_registro',
+                                                'type' => 'repeat',
+                                                'children' => [
+                                                    ['name' => 'comprimento_total_cm', 'type' => 'integer'],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ])
+            ->process();
+
+        self::assertSame(2, $result[0]['grupo_1'][0]['grupo_1/total_individuos']);
+        self::assertSame(18, $result[0]['grupo_1'][0]['biometria_registro'][0]['grupo_1/biometria_registro/comprimento_total_cm']);
+        self::assertSame(19, $result[0]['grupo_1'][0]['biometria_registro'][1]['grupo_1/biometria_registro/comprimento_total_cm']);
     }
 
     #[Test]
@@ -524,29 +620,29 @@ class DataCollectionSpreadsheetReviewPipelineTest extends TestCase
 
         $existingUuid = '019eae51-20fc-72f8-a380-f1c31f9391f6';
         $input = [[
-            'coletor' => [
+            'grupo_a' => [
                 [
-                    'coletor/nome' => 'Ana',
+                    'grupo_a/campo_a' => 'valor_a',
                 ],
                 [
-                    'coletor/nome' => 'Bruno',
-                    'coletor/uuid' => $existingUuid,
+                    'grupo_a/campo_a' => 'valor_b',
+                    'grupo_a/item_uuid' => $existingUuid,
                 ],
             ],
         ]];
 
         $result = $pipeline
             ->seed($input)
-            ->fillMissingUuidFields(['coletor/uuid'])
+            ->fillMissingUuidFields(['grupo_a/item_uuid'])
             ->process();
 
-        $this->assertArrayHasKey('coletor/uuid', $result[0]['coletor'][0]);
-        $this->assertArrayHasKey('coletor/uuid', $result[0]['coletor'][1]);
+        $this->assertArrayHasKey('grupo_a/item_uuid', $result[0]['grupo_a'][0]);
+        $this->assertArrayHasKey('grupo_a/item_uuid', $result[0]['grupo_a'][1]);
         $this->assertMatchesRegularExpression(
             '/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i',
-            $result[0]['coletor'][0]['coletor/uuid'],
+            $result[0]['grupo_a'][0]['grupo_a/item_uuid'],
         );
-        $this->assertSame($existingUuid, $result[0]['coletor'][1]['coletor/uuid']);
+        $this->assertSame($existingUuid, $result[0]['grupo_a'][1]['grupo_a/item_uuid']);
     }
 
     private function formExampleImagesJson(): array

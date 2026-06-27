@@ -136,6 +136,12 @@ class ValidateCollectionData
 
             if (is_array($value)) {
                 if (array_is_list($value)) {
+                    foreach ($value as $nestedValue) {
+                        if (is_array($nestedValue)) {
+                            $this->flattenContextValues($nestedValue, $context);
+                        }
+                    }
+
                     continue;
                 }
 
@@ -297,7 +303,7 @@ class ValidateCollectionData
             return $errors;
         }
 
-        if ($fieldValue !== [] && $fieldValue !== null) {
+        if ($this->repeatGroupHasValues($fieldValue)) {
             $errors[] = $this->buildError(
                 $index,
                 $fieldKey,
@@ -311,6 +317,42 @@ class ValidateCollectionData
         }
 
         return $errors;
+    }
+
+    /**
+     * @param mixed $fieldValue
+     */
+    protected function repeatGroupHasValues(mixed $fieldValue): bool
+    {
+        if (! is_array($fieldValue) || ! array_is_list($fieldValue)) {
+            return false;
+        }
+
+        foreach ($fieldValue as $childNode) {
+            if (! is_array($childNode)) {
+                if ($this->hasValue($childNode)) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            foreach ($childNode as $childValue) {
+                if (is_array($childValue)) {
+                    if ($this->repeatGroupHasValues($childValue)) {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if ($this->hasValue($childValue)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

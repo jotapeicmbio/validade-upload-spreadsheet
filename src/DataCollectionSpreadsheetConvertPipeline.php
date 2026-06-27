@@ -17,6 +17,7 @@ class DataCollectionSpreadsheetConvertPipeline
     protected ?string $instanceName = null;
     protected string $instanceVersion = '1';
     protected ?string $timestamp = null;
+    protected bool $useSchemaNormalizedXml = false;
 
     public function __construct()
     {
@@ -34,6 +35,7 @@ class DataCollectionSpreadsheetConvertPipeline
             if (! $this->hasManualFormInfo) {
                 $this->formDefinition = $collection->formDefinition();
             }
+            $this->useSchemaNormalizedXml = false;
 
             /** @var list<array<string, mixed>> $structuredCollection */
             $structuredCollection = $collection->process();
@@ -43,6 +45,7 @@ class DataCollectionSpreadsheetConvertPipeline
         }
 
         $this->collection = $collection;
+        $this->useSchemaNormalizedXml = false;
 
         return $this;
     }

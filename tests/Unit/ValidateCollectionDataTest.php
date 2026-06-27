@@ -248,6 +248,53 @@ final class ValidateCollectionDataTest extends TestCase
     }
 
     #[Test]
+    public function nao_retorna_erro_quando_repeat_nao_relevante_tem_apenas_placeholder_vazio(): void
+    {
+        $validators = [
+            'coletor' => [
+                'type' => 'repeat',
+                'relevant' => "false()",
+            ],
+        ];
+
+        $data = [
+            'coletor' => [[]],
+        ];
+
+        $errors = ValidateCollectionData::createErrorsList($data, $validators);
+
+        self::assertSame([], $errors);
+    }
+
+    #[Test]
+    public function normaliza_caminho_absoluto_do_xform_para_expressao_local(): void
+    {
+        $validators = CreateValidatorsStructure::build([
+            [
+                'name' => 'producao_registro',
+                'type' => 'repeat',
+                'bind' => [
+                    'relevant' => "selected( /tmpuvh4lklx/dados_viagem_pesca/situacao_pescaria ,'saiu_pegou_peixe')",
+                ],
+                'children' => [
+                    [
+                        'name' => 'grupo_captura',
+                        'type' => 'select1',
+                        'bind' => [
+                            'required' => 'yes',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        self::assertSame(
+            'selected( ${situacao_pescaria} ,\'saiu_pegou_peixe\')',
+            $validators['producao_registro']['relevant'],
+        );
+    }
+
+    #[Test]
     public function preserva_relevant_em_campo_condicional_dentro_de_repeat(): void
     {
         $validators = CreateValidatorsStructure::build($this->xformLikeProducaoRegistroNode());

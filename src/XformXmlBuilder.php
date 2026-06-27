@@ -9,6 +9,8 @@ use DOMElement;
 
 class XformXmlBuilder
 {
+    protected ?TypeNormalizerRegistry $type_normalizers = null;
+
     public function __construct() {}
 
     /**
@@ -196,36 +198,16 @@ class XformXmlBuilder
             return null;
         }
 
-        return match ($type) {
-            'integer' => is_numeric($value) ? (string) (int) $value : $value,
-            'decimal' => $this->normalizeDecimalValue($value),
-            default => $value,
-        };
+        return $this->typeNormalizers()->normalize((string) $type, $value);
     }
 
-    protected function normalizeDecimalValue(mixed $value): mixed
+    protected function typeNormalizers(): TypeNormalizerRegistry
     {
-        if (is_string($value)) {
-            $value = trim($value);
-            if ($value === '') {
-                return $value;
-            }
-
-            $value = str_replace(',', '.', $value);
+        if ($this->type_normalizers === null) {
+            $this->type_normalizers = TypeNormalizerRegistry::default();
         }
 
-        if (! is_numeric($value)) {
-            return $value;
-        }
-
-        $stringValue = (string) $value;
-        if (str_contains($stringValue, '.')) {
-            $normalized = rtrim(rtrim($stringValue, '0'), '.');
-
-            return str_contains($normalized, '.') ? $normalized : $normalized . '.0';
-        }
-
-        return $stringValue . '.0';
+        return $this->type_normalizers;
     }
 
     protected function generateUuid(): string
