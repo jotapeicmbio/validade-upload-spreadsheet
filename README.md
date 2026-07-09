@@ -20,13 +20,16 @@ composer require icmbio/validate-upload-registers-from-spreadsheet
 O pacote cobre o fluxo abaixo:
 
 1. Lê a planilha XLSX.
-2. Estrutura blocos repetidos a partir de linhas-modelo.
-3. Monta os validadores a partir da definição do formulário.
-4. Valida campos obrigatórios, regras XPath, escolhas e tipos.
-5. Resolve escolhas dinâmicas.
-6. Calcula campos derivados, como `uuid()`.
-7. Preenche UUIDs faltantes em caminhos declarados.
-8. Gera XML final para cada coleta.
+2. Separa a planilha em instâncias quando necessário.
+3. Estrutura a coleta com base no `xform`.
+4. Monta os validadores a partir da definição do formulário.
+5. Valida campos obrigatórios, regras XPath, escolhas e tipos.
+6. Resolve escolhas dinâmicas.
+7. Calcula campos derivados, como `uuid()`.
+8. Preenche UUIDs faltantes em caminhos declarados.
+9. Gera XML final para cada coleta.
+
+Veja também [docs/fluxo-desmontado.md](/home/icmbio/project/validade-upload-spreadsheet/docs/fluxo-desmontado.md) para a divisão por classes e entradas/saídas, e [docs/exemplos-fluxo.md](/home/icmbio/project/validade-upload-spreadsheet/docs/exemplos-fluxo.md) para exemplos genéricos de entrada e saída.
 
 ## Fluxo recomendado
 
@@ -132,19 +135,39 @@ Regras importantes:
 - Se houver mais de uma aba, o pacote tenta usar a aba `Preenchimento`.
 - Se a planilha não existir, uma exceção é lançada.
 
-## Estruturação de dados
+## Separação de instâncias
 
-`StructureSpreadsheetData` transforma uma matriz de worksheet em uma coleção estruturada.
+`SpreadsheetInstanceSeparator` divide a worksheet em `headers`, `labels` e `collects`.
 
 ```php
-use Icmbio\ValidateRegister\Validator\StructureSpreadsheetData;
+use Icmbio\ValidateRegister\SpreadsheetInstanceSeparator;
 
-$structured = (new StructureSpreadsheetData($worksheet))
-    ->estruture()
-    ->toArray();
+$spreadsheet = (new SpreadsheetInstanceSeparator())->separate($worksheet);
 ```
 
-Isso é útil quando a planilha usa linhas repetidas ou colunas agrupadas por prefixo, como `coletor/nome`.
+Cada item em `collects` representa uma instância isolada para processamento.
+
+## Estruturação guiada pelo XForm
+
+`XformCollectionBuilder` monta a coleção final a partir da árvore do formulário.
+
+```php
+use Icmbio\ValidateRegister\XformCollectionBuilder;
+use Icmbio\ValidateRegister\XformSchema;
+
+$schema = XformSchema::fromArray($formDefinition);
+$collection = (new XformCollectionBuilder($schema))->build($spreadsheet);
+```
+
+O builder usa a estrutura do `xform` como guia para:
+
+- identificar grupos e repeats
+- preservar a hierarquia correta
+- ignorar campos técnicos e auxiliares
+- manter `null` em campos simples quando necessário
+- remover grupos e repeats vazios
+
+`StructureSpreadsheetData` continua disponível como estrutura legada para cenários antigos que ainda dependem de linhas-modelo.
 
 ## Validação
 
@@ -266,6 +289,7 @@ $reviewPipeline->transform(
 - Campos com prefixo `_` são ignorados na geração do XML.
 - O campo `meta.instanceID` é preservado quando já existe na entrada.
 - Quando não houver `instanceID`, o XML recebe `uuid:...` automaticamente.
+- A estrutura final do XML segue o `xform`, não apenas o formato bruto da planilha.
 
 ## Execução dos testes
 
