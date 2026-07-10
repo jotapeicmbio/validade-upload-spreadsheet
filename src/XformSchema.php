@@ -48,22 +48,6 @@ final class XformSchema
     }
 
     /**
-     * @return list<string>
-     */
-    public function repeatPaths(): array
-    {
-        $paths = [];
-
-        foreach ($this->nodesByPath as $path => $node) {
-            if ($node->isRepeat()) {
-                $paths[] = $path;
-            }
-        }
-
-        return $paths;
-    }
-
-    /**
      * @param array<int, mixed> $formDefinition
      */
     protected function buildFromArray(array $formDefinition): self

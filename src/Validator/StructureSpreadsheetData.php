@@ -150,6 +150,7 @@ class StructureSpreadsheetData
         $processedIndices = [];
 
         foreach ($groupedIndices as $groupKey => $indices) {
+            $isRepeatGroup = $this->isRepeatGroup($groupKey);
             $groupHasValuesInCurrentRow = false;
             $groupAlreadyExpanded = false;
             $groupHasNestedValuesInCurrentRow = false;
@@ -173,6 +174,18 @@ class StructureSpreadsheetData
             }
 
             if (! $groupHasValuesInCurrentRow) {
+                continue;
+            }
+
+            if (! $isRepeatGroup) {
+                foreach ($indices as $index) {
+                    $processedIndices[$index] = true;
+
+                    if ($this->isEmptyCell($modelRow[$index] ?? null) && ! $this->isEmptyCell($currentRow[$index] ?? null)) {
+                        $modelRow[$index] = $currentRow[$index];
+                    }
+                }
+
                 continue;
             }
 
@@ -214,6 +227,10 @@ class StructureSpreadsheetData
             }
 
             if (array_key_exists($i, $modelRow) && ! $this->isEmptyCell($modelRow[$i])) {
+                if (! $this->isRepeatGroup($this->groupKeyForHeaderIndex($i))) {
+                    continue;
+                }
+
                 if (is_array($modelRow[$i])) {
                     $modelRow[$i][] = $cell;
                 } else {
@@ -227,6 +244,18 @@ class StructureSpreadsheetData
         }
 
         return $modelRow;
+    }
+
+    protected function groupKeyForHeaderIndex(int $index): string
+    {
+        $header = (string) ($this->headers[$index] ?? '');
+        if (! str_contains($header, '/')) {
+            return '';
+        }
+
+        [$groupKey] = explode('/', $header, 2);
+
+        return $groupKey;
     }
 
     /**
@@ -295,17 +324,11 @@ class StructureSpreadsheetData
      */
     protected function buildGroupedValue(array $columns, string $groupKey): array
     {
-        if (! $this->groupHasRepeatedItems($columns)) {
-            return $this->buildSingleGroupItem($columns);
+        if (! $this->isRepeatGroup($groupKey)) {
+            return $this->normalizeGroupedItem($this->buildRawGroupItem($columns), $groupKey);
         }
 
-        $items = $this->buildGroupedItems($columns, $groupKey);
-
-        if ($this->shouldCollapseGroupedItems($items)) {
-            return $this->collapseGroupedItems($items);
-        }
-
-        return $items;
+        return $this->buildGroupedItems($columns, $groupKey);
     }
 
     /**
@@ -335,7 +358,7 @@ class StructureSpreadsheetData
                     : $value;
             }
 
-            $item = $this->normalizeNestedRepeatItem($item, $groupKey);
+            $item = $this->normalizeGroupedItem($item, $groupKey);
             $item = $this->propagateRepeatItemValues($item, $previousItem, $groupKey);
 
             if ($this->itemHasValue($item)) {
@@ -351,27 +374,15 @@ class StructureSpreadsheetData
      * @param array<int, array{header: string, value: mixed}> $columns
      * @return array<string, mixed>
      */
-    protected function buildSingleGroupItem(array $columns): array
+    protected function buildRawGroupItem(array $columns): array
     {
         $item = [];
 
         foreach ($columns as $column) {
-            $item[$this->lastSegment($column['header'])] = $column['value'];
+            $item[$column['header']] = $column['value'];
         }
 
         return $item;
-    }
-
-    /** @param array<int, array{header: string, value: mixed}> $columns */
-    protected function groupHasRepeatedItems(array $columns): bool
-    {
-        foreach ($columns as $column) {
-            if (is_array($column['value'])) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /** @param array<string, mixed> $item */
@@ -421,7 +432,7 @@ class StructureSpreadsheetData
      * @param array<string, mixed> $item
      * @return array<string, mixed>
      */
-    protected function normalizeNestedRepeatItem(array $item, string $groupKey): array
+    protected function normalizeGroupedItem(array $item, string $groupKey): array
     {
         $normalized = [];
         $nestedRepeatRows = [];
@@ -436,12 +447,12 @@ class StructureSpreadsheetData
             $segments = explode('/', $relativePath);
 
             if (count($segments) <= 1) {
-                $normalized[$fieldPath] = $value;
+                $normalized[$segments[0]] = $value;
                 continue;
             }
 
             $nestedRepeatKey = $segments[0];
-            $nestedFieldPath = $groupKey . '/' . $nestedRepeatKey . '/' . implode('/', array_slice($segments, 1));
+            $nestedFieldPath = implode('/', array_slice($segments, 1));
 
             if (! array_key_exists($nestedRepeatKey, $nestedRepeatRows)) {
                 $nestedRepeatRows[$nestedRepeatKey] = [];
@@ -505,142 +516,8 @@ class StructureSpreadsheetData
         return $item;
     }
 
-    /**
-     * @param array<int, array<string, mixed>> $items
-     */
-    protected function shouldCollapseGroupedItems(array $items): bool
-    {
-        if (count($items) <= 1) {
-            return false;
-        }
-
-        $referenceItem = $items[0];
-        $nestedRepeatKeys = $this->collectNestedRepeatKeys($items);
-
-        if ($nestedRepeatKeys === []) {
-            return false;
-        }
-
-        foreach ($items as $item) {
-            foreach ($item as $fieldPath => $value) {
-                if (isset($nestedRepeatKeys[$fieldPath])) {
-                    continue;
-                }
-
-                if (! array_key_exists($fieldPath, $referenceItem) || $referenceItem[$fieldPath] !== $value) {
-                    return false;
-                }
-            }
-
-            foreach ($referenceItem as $fieldPath => $value) {
-                if (isset($nestedRepeatKeys[$fieldPath])) {
-                    continue;
-                }
-
-                if (! array_key_exists($fieldPath, $item) || $item[$fieldPath] !== $value) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $items
-     * @return array<string, mixed>
-     */
-    protected function collapseGroupedItems(array $items): array
-    {
-        $collapsed = $items[0];
-        $nestedRepeatKeys = $this->collectNestedRepeatKeys($items);
-
-        foreach ($items as $item) {
-            foreach ($item as $fieldPath => $value) {
-                if (! $this->isNestedRepeatValue($value)) {
-                    continue;
-                }
-
-                $collapsed[$fieldPath] = array_merge($collapsed[$fieldPath] ?? [], $value);
-            }
-        }
-
-        foreach ($nestedRepeatKeys as $fieldPath => $_) {
-            if (! isset($collapsed[$fieldPath])) {
-                $collapsed[$fieldPath] = [];
-            }
-
-            $collapsed[$fieldPath] = $this->deduplicateNestedRepeatRows($collapsed[$fieldPath]);
-        }
-
-        return $collapsed;
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $items
-     * @return array<string, true>
-     */
-    protected function collectNestedRepeatKeys(array $items): array
-    {
-        $nestedRepeatKeys = [];
-
-        foreach ($items as $item) {
-            foreach ($item as $fieldPath => $value) {
-                if ($this->isNestedRepeatValue($value)) {
-                    $nestedRepeatKeys[$fieldPath] = true;
-                }
-            }
-        }
-
-        return $nestedRepeatKeys;
-    }
-
-    /**
-     * @param array<int, array<string, mixed>>|array<int, mixed> $rows
-     * @return array<int, array<string, mixed>>
-     */
-    protected function deduplicateNestedRepeatRows(array $rows): array
-    {
-        $deduplicated = [];
-        $seen = [];
-
-        foreach ($rows as $row) {
-            if (! is_array($row)) {
-                continue;
-            }
-
-            $signature = json_encode($row, JSON_THROW_ON_ERROR);
-            if (isset($seen[$signature])) {
-                continue;
-            }
-
-            $seen[$signature] = true;
-            $deduplicated[] = $row;
-        }
-
-        return $deduplicated;
-    }
-
     protected function isRepeatGroup(string $groupKey): bool
     {
         return isset($this->repeatGroupKeys[$groupKey]);
-    }
-
-    /**
-     * @param mixed $value
-     */
-    protected function isNestedRepeatValue(mixed $value): bool
-    {
-        if (! is_array($value) || ! array_is_list($value) || $value === []) {
-            return false;
-        }
-
-        foreach ($value as $item) {
-            if (is_array($item)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
